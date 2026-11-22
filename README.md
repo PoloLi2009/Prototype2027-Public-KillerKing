@@ -1,3 +1,37 @@
+# Prototype-2027-Killer-King
+
+Killer King 的 Driver Station 手动程序为 `Ba`（Test 分组）。项目基于 FIRST FTC SDK v12.0，TeamCode 使用 FTCLib 2.1.1 的 CommandOpMode、CommandBase 和 SubsystemBase。
+
+## Gamepad 1
+
+| 操作 | 功能 |
+| --- | --- |
+| 左摇杆 / 右摇杆 X | 场地坐标平移 / 自转 |
+| START | 将当前车头方向设为场地前方 |
+| ↑ / ↓ | 升高 / 降低 Intake |
+| ← / → / X | 飞轮目标转速减 / 加 50 RPM / 清零 |
+| LB | 切换扳机舵机开关 |
+| RB | 按住时以设定功率运行 Intake 和通道 |
+| A / B | 设定功率减 / 加 0.1 |
+| RT / LT | 按扳机深度吸球 / 反转退球 |
+| Y / BACK | 云台位置加 / 减 0.1 |
+
+同时输入时，通道的优先级为 RB、RT、LT。飞轮初始目标转速为 0 RPM，RB 的初始功率为 1.0。
+
+## 硬件配置
+
+| 配置名 | 机构 |
+| --- | --- |
+| `0` / `1` / `2` / `3` | 左前 / 左后 / 右前 / 右后底盘电机，四个均反向 |
+| `00` / `01` | 带编码器的飞轮电机（反向） / 另一侧飞轮电机 |
+| `03` / `02` | Intake 电机 / 通道电机（反向） |
+| `s0` / `s00` | Intake 抬升舵机，镜像控制 |
+| `s2` / `s01` | 云台舵机，同向控制 |
+| `s1` | 扳机舵机，关闭 0.45，打开 0.80 |
+| `imu` | Hub Logo 朝右，USB 口朝前 |
+
+---
+
 ## NOTICE
 
 This repository contains the public FTC SDK for the BIOBUZZ (2026-2027) competition season.
