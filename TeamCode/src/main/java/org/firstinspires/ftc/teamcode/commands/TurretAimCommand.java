@@ -6,8 +6,9 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.subsystems.Pinpoint;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
+
+import java.util.function.Supplier;
 
 public final class TurretAimCommand extends CommandBase {
     private static final double REAR_DIRECTION_DEGREES = 180.0;
@@ -16,15 +17,15 @@ public final class TurretAimCommand extends CommandBase {
     private static final double HIGH_TARGET_Y_IN = 96.0;
     private static final double SWITCH_Y_IN = 72.0;
 
-    private final Pinpoint pinpoint;
+    private final Supplier<Pose2D> poseSource;
     private final Turret turret;
     private boolean enabled;
     private double targetY = LOW_TARGET_Y_IN;
     private double relativeTargetDegrees;
     private boolean targetReachable;
 
-    public TurretAimCommand(Pinpoint pinpoint, Turret turret) {
-        this.pinpoint = pinpoint;
+    public TurretAimCommand(Supplier<Pose2D> poseSource, Turret turret) {
+        this.poseSource = poseSource;
         this.turret = turret;
         addRequirements(turret);
     }
@@ -42,7 +43,7 @@ public final class TurretAimCommand extends CommandBase {
             return;
         }
 
-        Pose2D pose = pinpoint.getPose();
+        Pose2D pose = poseSource.get();
         if (pose == null) {
             return;
         }
@@ -58,7 +59,7 @@ public final class TurretAimCommand extends CommandBase {
     }
 
     public void addTelemetry(Telemetry telemetry) {
-        boolean hasPose = pinpoint.getPose() != null;
+        boolean hasPose = poseSource.get() != null;
         telemetry.addData("自瞄", enabled ? (hasPose ? "ON" : "等待位姿") : "OFF");
         telemetry.addData("云台舵机位置", "%.3f", turret.getPosition());
         if (enabled && hasPose) {

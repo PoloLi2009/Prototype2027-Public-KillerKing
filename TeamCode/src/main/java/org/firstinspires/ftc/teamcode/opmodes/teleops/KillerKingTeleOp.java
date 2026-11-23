@@ -8,12 +8,15 @@ import org.firstinspires.ftc.teamcode.commands.DriveCommand;
 import org.firstinspires.ftc.teamcode.commands.FeedCommand;
 import org.firstinspires.ftc.teamcode.commands.ShooterCommand;
 import org.firstinspires.ftc.teamcode.commands.TurretAimCommand;
+import org.firstinspires.ftc.teamcode.commands.VisionReadCommand;
 import org.firstinspires.ftc.teamcode.subsystems.Drive;
 import org.firstinspires.ftc.teamcode.subsystems.Gate;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Pinpoint;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
+import org.firstinspires.ftc.teamcode.subsystems.localization.VisionLocalization;
+import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision;
 
 import java.util.function.BooleanSupplier;
 
@@ -24,7 +27,9 @@ public final class KillerKingTeleOp extends CommandOpMode {
     private Intake intake;
     private Gate gate;
     private Pinpoint pinpoint;
+    private LimelightVision vision;
     private FeedCommand feedCommand;
+    private VisionReadCommand visionReadCommand;
     private TurretAimCommand turretAimCommand;
 
     @Override
@@ -35,12 +40,15 @@ public final class KillerKingTeleOp extends CommandOpMode {
         gate = new Gate(hardwareMap);
         pinpoint = new Pinpoint(hardwareMap);
         Turret turret = new Turret(hardwareMap);
+        vision = new LimelightVision(hardwareMap);
+        visionReadCommand = new VisionReadCommand(vision, pinpoint, turret, new VisionLocalization());
+        vision.setDefaultCommand(visionReadCommand);
 
         drive.setDefaultCommand(new DriveCommand(drive, gamepad1));
         shooter.setDefaultCommand(new ShooterCommand(shooter, this::getRuntime));
         feedCommand = new FeedCommand(intake, gate, gamepad1, this::getRuntime);
         intake.setDefaultCommand(feedCommand);
-        turretAimCommand = new TurretAimCommand(pinpoint, turret);
+        turretAimCommand = new TurretAimCommand(visionReadCommand::getAimPose, turret);
         turret.setDefaultCommand(turretAimCommand);
 
         onPress(() -> gamepad1.dpad_left, shooter::decreaseRpm);
@@ -50,12 +58,16 @@ public final class KillerKingTeleOp extends CommandOpMode {
         onPress(() -> gamepad1.a, feedCommand::decreaseFirePower);
         onPress(() -> gamepad1.b, feedCommand::increaseFirePower);
         onPress(() -> gamepad1.y, turretAimCommand::toggleAim);
+        onPress(() -> gamepad1.x, vision::toggleAlliance);
+        onPress(() -> gamepad1.right_stick_button, visionReadCommand::toggleVisionForAim);
         onPress(() -> gamepad1.start, drive::resetYaw);
 
         telemetry.addLine("Killer King 初始化完成");
         telemetry.addLine("←/→ 调 RPM  LT 吸球  RT 射球  LB 反转  A/B 调功率");
-        telemetry.addLine("↑/↓ 抬升  Y 自瞄  START 重置驾驶朝向");
+        telemetry.addLine("↑/↓ 抬升  Y 自瞄  X 切 Limelight 红蓝地图  START 重置驾驶朝向");
+        telemetry.addLine("右摇杆按下：切换自瞄位姿 Pinpoint / EKF");
         pinpoint.addTelemetry(telemetry);
+        visionReadCommand.addTelemetry(telemetry);
         telemetry.update();
     }
 
@@ -71,7 +83,7 @@ public final class KillerKingTeleOp extends CommandOpMode {
 
             drive.resetYaw();
             schedule(drive.getDefaultCommand(), shooter.getDefaultCommand(), feedCommand,
-                    turretAimCommand);
+                    visionReadCommand, turretAimCommand);
             while (opModeIsActive()) {
                 run();
             }
@@ -86,6 +98,9 @@ public final class KillerKingTeleOp extends CommandOpMode {
             if (intake != null) {
                 intake.stop();
             }
+            if (vision != null) {
+                vision.stop();
+            }
         }
     }
 
@@ -95,6 +110,7 @@ public final class KillerKingTeleOp extends CommandOpMode {
 
         drive.addTelemetry(telemetry);
         pinpoint.addTelemetry(telemetry);
+        visionReadCommand.addTelemetry(telemetry);
         shooter.addTelemetry(telemetry);
         telemetry.addData("Intake 抬升", "%.2f", intake.getLiftPosition());
         turretAimCommand.addTelemetry(telemetry);

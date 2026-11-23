@@ -15,10 +15,12 @@ Killer King 的 Driver Station 手动程序为 `Ba`（Test 分组）。项目基
 | LB（左肩键） | 按住时以设定功率反转 Intake 和通道 |
 | A / B | 吸球、送料和反转的共同功率减 / 加 0.1 |
 | Y | 开关云台自瞄，关闭时云台回中 |
+| X | 切换 Limelight 红蓝 HIVE 地图，默认蓝方 |
+| 右摇杆按下 | 切换自瞄使用的 Pinpoint / EKF 位姿，默认 Pinpoint |
 
 按下 Driver Station 的 Start 后，飞轮目标为 3375 RPM，吸球、送料和反转初始功率为 1.0。电机优先级依次为 RT、LT、LB。LT 按下时优先关闭球挡。松开按键后，球挡保持上一次位置。
 
-Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。自瞄在 Y < 72 in 时瞄准 (84, 58) in，其余位置瞄准 (84, 96) in。云台中位朝向车尾，偏转范围为 ±135°。Pinpoint 无有效位姿时，自瞄保持当前舵机位置。
+Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。自瞄在 Y < 72 in 时瞄准 (84, 58) in，其余位置瞄准 (84, 96) in。云台中位朝向车尾，偏转范围为 ±135°。定位无有效位姿时，自瞄保持当前舵机位置。
 
 ## 硬件配置
 
@@ -32,6 +34,15 @@ Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。自瞄�
 | `s1` | 球挡舵机，关闭 0.55，打开 0.80 |
 | `imu` | Hub Logo 朝右，USB 口朝前 |
 | `od` | goBILDA Pinpoint，偏移 (-48, -125) mm，双编码器方向均为 FORWARD |
+| `limelight` | 可选 Limelight 3A，供 HIVE AprilTag 定位 |
+
+## Limelight 视觉定位
+
+在 Limelight 网页端给蓝方 pipeline 0 上传 `TeamCode/src/main/assets/vision/BIOBUZZ_HiveFlat_Blue.fmap`，给红方 pipeline 1 上传同目录的 `BIOBUZZ_HiveFlat_Red.fmap`。按 Killer King 实车测量值填写相机的 Forward、Right、Up 和 Roll、Pitch、Yaw。使用云台转轴在地面的投影为参考原点，云台舵机在 0.5 时，参考系 +X 朝车头。
+
+在 `VisionConstants` 填写转轴相对底盘中心的前向和左向偏移，初值均为 0。视觉校正用历史舵机指令角估算曝光时的云台角，并等待云台稳定后再接受图像。
+
+遥测并列显示 Pinpoint、HIVE 校正后的视觉位姿、EKF 和 WPILib 对照结果。场地转换初值为地图坐标顺时针旋转 90°、场地中心对应 Pinpoint 的 (72, 72) in。在场上确认相机外参及两套坐标轴一致后，按下右摇杆，让 Y 自瞄使用 EKF。初次接受视觉前仍使用 Pinpoint。接受后丢标签时，EKF 用 Pinpoint 继续推算。无相机时，`Ba` 仍可正常使用 Pinpoint 自瞄。
 
 ---
 
