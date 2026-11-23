@@ -4,21 +4,19 @@ import com.arcrobotics.ftclib.command.CommandBase;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.subsystems.Gate;
-import org.firstinspires.ftc.teamcode.subsystems.Intake;
+import org.firstinspires.ftc.teamcode.subsystems.gate.Gate;
+import org.firstinspires.ftc.teamcode.subsystems.gate.GateConstants;
+import org.firstinspires.ftc.teamcode.subsystems.intake.Intake;
+import org.firstinspires.ftc.teamcode.subsystems.intake.IntakeConstants;
 
 import java.util.function.DoubleSupplier;
 
 public final class FeedCommand extends CommandBase {
-    private static final double TRIGGER_DEADZONE = 0.01;
-    private static final double FIRE_POWER_STEP = 0.1;
-    private static final double FIRE_PRE_OPEN_SEC = 0.1;
-
     private final Intake intake;
     private final Gate gate;
     private final Gamepad gamepad;
     private final DoubleSupplier runtime;
-    private double firePower = 1.0;
+    private double firePower = IntakeConstants.INITIAL_FEED_POWER;
     private double fireStartTime;
     private boolean wasFiring;
     private boolean wasIntaking;
@@ -40,8 +38,8 @@ public final class FeedCommand extends CommandBase {
     @Override
     public void execute() {
         double now = runtime.getAsDouble();
-        boolean firing = gamepad.right_trigger > TRIGGER_DEADZONE;
-        boolean intaking = gamepad.left_trigger > TRIGGER_DEADZONE;
+        boolean firing = gamepad.right_trigger > IntakeConstants.TRIGGER_DEADZONE;
+        boolean intaking = gamepad.left_trigger > IntakeConstants.TRIGGER_DEADZONE;
         boolean firePressed = firing && !wasFiring;
         if (firePressed) {
             fireStartTime = now;
@@ -55,7 +53,7 @@ public final class FeedCommand extends CommandBase {
 
         double power = 0;
         if (firing) {
-            if (now - fireStartTime >= FIRE_PRE_OPEN_SEC) {
+            if (now - fireStartTime >= GateConstants.PRE_OPEN_SECONDS) {
                 power = firePower;
             }
         } else if (intaking) {
@@ -69,11 +67,13 @@ public final class FeedCommand extends CommandBase {
     }
 
     public void decreaseFirePower() {
-        firePower = Range.clip(firePower - FIRE_POWER_STEP, 0, 1);
+        firePower = Range.clip(firePower - IntakeConstants.FEED_POWER_STEP,
+                IntakeConstants.MIN_FEED_POWER, IntakeConstants.MAX_FEED_POWER);
     }
 
     public void increaseFirePower() {
-        firePower = Range.clip(firePower + FIRE_POWER_STEP, 0, 1);
+        firePower = Range.clip(firePower + IntakeConstants.FEED_POWER_STEP,
+                IntakeConstants.MIN_FEED_POWER, IntakeConstants.MAX_FEED_POWER);
     }
 
     public double getFirePower() {

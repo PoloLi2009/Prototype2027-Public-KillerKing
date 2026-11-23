@@ -13,16 +13,9 @@ import org.firstinspires.ftc.teamcode.subsystems.localization.fusion.PoseHistory
 import org.firstinspires.ftc.teamcode.subsystems.localization.fusion.WpiPinpointPoseEstimator;
 import org.firstinspires.ftc.teamcode.subsystems.vision.HiveFlatPoseSolver;
 import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision;
-import org.firstinspires.ftc.teamcode.subsystems.vision.VisionConstants;
 
 /** Spinup HIVE correction and delayed pose fusion, in Killer King's field frame. */
 public final class VisionLocalization extends SubsystemBase {
-    private static final double TURRET_SAMPLE_SECONDS = 0.020;
-    private static final double TURRET_ANGLE_STEP_DEGREES = 1.0;
-    private static final double HIVE_STABLE_SECONDS = 0.15;
-    private static final double MAX_TILT_STEP_DEGREES = 2.0;
-    private static final double MAX_FRAME_GAP_SECONDS = 0.2;
-
     private final PoseHistory history = new PoseHistory();
     private final WpiPinpointPoseEstimator wpi = new WpiPinpointPoseEstimator();
     private final PinpointEkf ekf = new PinpointEkf();
@@ -60,7 +53,8 @@ public final class VisionLocalization extends SubsystemBase {
         ekf.updateWithTime(now, odometry);
 
         if (!Double.isFinite(lastTurretDegrees)
-                || Math.abs(turretClockwiseDegrees - lastTurretDegrees) >= TURRET_ANGLE_STEP_DEGREES) {
+                || Math.abs(turretClockwiseDegrees - lastTurretDegrees)
+                >= VisionLocalizationConstants.TURRET_ANGLE_STEP_DEGREES) {
             lastTurretDegrees = turretClockwiseDegrees;
             lastTurretMotionTime = now;
         }
@@ -75,13 +69,14 @@ public final class VisionLocalization extends SubsystemBase {
             reject("Capture outside Pinpoint history");
             return;
         }
-        if (capture < lastTurretMotionTime + VisionConstants.turretSettleSeconds) {
+        if (capture < lastTurretMotionTime + VisionLocalizationConstants.TURRET_SETTLE_SECONDS) {
             reject("Waiting for turret to settle");
             return;
         }
-        PoseHistory.Sample earlier = history.sample(capture - TURRET_SAMPLE_SECONDS);
+        PoseHistory.Sample earlier = history.sample(capture - VisionLocalizationConstants.TURRET_SAMPLE_SECONDS);
         if (earlier == null || Math.abs(past.turretDegrees - earlier.turretDegrees)
-                / TURRET_SAMPLE_SECONDS > VisionConstants.maxTurretSpeedDegreesPerSecond) {
+                / VisionLocalizationConstants.TURRET_SAMPLE_SECONDS
+                > VisionLocalizationConstants.maxTurretSpeedDegreesPerSecond) {
             reject("Turret motion at exposure");
             return;
         }
@@ -102,14 +97,14 @@ public final class VisionLocalization extends SubsystemBase {
         tilt = result.hiveTiltDegrees;
         correctedVision = toPinpointFrame(result.chassisPose);
         if (frame.pipeline != lastPipeline || !Double.isFinite(lastTilt)
-                || capture - lastFrameTime > MAX_FRAME_GAP_SECONDS
-                || Math.abs(tilt - lastTilt) > MAX_TILT_STEP_DEGREES) {
+                || capture - lastFrameTime > VisionLocalizationConstants.MAX_FRAME_GAP_SECONDS
+                || Math.abs(tilt - lastTilt) > VisionLocalizationConstants.MAX_TILT_STEP_DEGREES) {
             stableSince = capture;
         }
         lastPipeline = frame.pipeline;
         lastTilt = tilt;
         lastFrameTime = capture;
-        if (capture - stableSince < HIVE_STABLE_SECONDS) {
+        if (capture - stableSince < VisionLocalizationConstants.HIVE_STABLE_SECONDS) {
             reject("Waiting for stable HIVE tilt");
             return;
         }
@@ -117,18 +112,18 @@ public final class VisionLocalization extends SubsystemBase {
         // Spinup seeds directly from its first accepted pose. Check it against Killer King's
         // known odometry frame first so an uncalibrated mount or axis cannot seed a large jump.
         if (!ekf.isSeeded() && (correctedVision.getTranslation().getDistance(past.odometry.getTranslation())
-                > VisionConstants.maxSeedDifferenceMeters
+                > VisionLocalizationConstants.MAX_SEED_DIFFERENCE_METERS
                 || Math.abs(correctedVision.getRotation().minus(past.odometry.getRotation()).getDegrees())
-                > VisionConstants.maxSeedHeadingErrorDegrees)) {
+                > VisionLocalizationConstants.MAX_SEED_HEADING_ERROR_DEGREES)) {
             reject("Vision and Pinpoint disagree at initialization");
             return;
         }
 
         double distance = frame.averageDistanceMeters;
-        double xyStd = VisionConstants.minimumVisionXyStdMeters
-                + VisionConstants.visionDistanceNoiseCoefficient * distance * distance
+        double xyStd = VisionLocalizationConstants.minimumVisionXyStdMeters
+                + VisionLocalizationConstants.visionDistanceNoiseCoefficient * distance * distance
                 / Math.sqrt(frame.tagCount);
-        double headingStd = Math.toRadians(VisionConstants.visionHeadingStdDegrees);
+        double headingStd = Math.toRadians(VisionLocalizationConstants.visionHeadingStdDegrees);
         if (!Double.isFinite(xyStd)) {
             reject("Invalid measurement noise");
             return;
@@ -147,13 +142,13 @@ public final class VisionLocalization extends SubsystemBase {
     }
 
     private static Pose2d toPinpointFrame(Pose2d mapPose) {
-        Rotation2d axes = Rotation2d.fromDegrees(VisionConstants.mapToPinpointYawDegrees);
-        double center = DistanceUnit.INCH.toMeters(VisionConstants.fieldCenterInches);
+        Rotation2d axes = Rotation2d.fromDegrees(VisionLocalizationConstants.MAP_TO_PINPOINT_YAW_DEGREES);
+        double center = DistanceUnit.INCH.toMeters(VisionLocalizationConstants.FIELD_CENTER_INCHES);
         Rotation2d heading = mapPose.getRotation().plus(axes);
         Translation2d position = mapPose.getTranslation().rotateBy(axes)
                 .plus(new Translation2d(center, center));
-        Translation2d pivotOffset = new Translation2d(VisionConstants.turretPivotForwardMeters,
-                VisionConstants.turretPivotLeftMeters);
+        Translation2d pivotOffset = new Translation2d(VisionLocalizationConstants.TURRET_PIVOT_FORWARD_METERS,
+                VisionLocalizationConstants.TURRET_PIVOT_LEFT_METERS);
         return new Pose2d(position.minus(pivotOffset.rotateBy(heading)), heading);
     }
 

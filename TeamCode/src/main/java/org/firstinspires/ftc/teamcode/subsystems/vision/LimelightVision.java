@@ -108,9 +108,11 @@ public class LimelightVision extends SubsystemBase {
         }
         // Red and blue HIVE structures tilt independently; never apply one correction to both.
         StringBuilder unknownTagIds = new StringBuilder();
+        int minTagId = blueAlliance ? VisionConstants.blueMinTagId : VisionConstants.redMinTagId;
+        int maxTagId = blueAlliance ? VisionConstants.blueMaxTagId : VisionConstants.redMaxTagId;
         for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
             int id = tag.getFiducialId();
-            if (!(blueAlliance ? id >= 38 && id <= 45 : id >= 30 && id <= 37)) {
+            if (id < minTagId || id > maxTagId) {
                 if (unknownTagIds.length() > 0) unknownTagIds.append(",");
                 unknownTagIds.append(id);
             }
@@ -132,8 +134,9 @@ public class LimelightVision extends SubsystemBase {
 
     private void requestPipeline(int pipeline) {
         long now = System.nanoTime();
+        long retryNanos = TimeUnit.SECONDS.toNanos(VisionConstants.pipelineRetrySeconds);
         if (pendingPipelineSwitch != null && (!pendingPipelineSwitch.isDone()
-                || now - lastPipelineRequestNanos < TimeUnit.SECONDS.toNanos(1))) {
+                || now - lastPipelineRequestNanos < retryNanos)) {
             return;
         }
         lastPipelineRequestNanos = now;

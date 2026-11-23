@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+package org.firstinspires.ftc.teamcode.subsystems.pinpoint;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
@@ -11,12 +11,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 public final class Pinpoint extends SubsystemBase {
-    private static final String DEVICE_NAME = "od";
-    private static final double X_OFFSET_MM = -48.0;
-    private static final double Y_OFFSET_MM = -125.0;
-    private static final Pose2D START_POSE =
-            new Pose2D(DistanceUnit.INCH, 72, 72, AngleUnit.DEGREES, 180);
-
     private final GoBildaPinpointDriver driver;
     private boolean startPoseSet;
     private Pose2D pose;
@@ -25,18 +19,21 @@ public final class Pinpoint extends SubsystemBase {
     public Pinpoint(HardwareMap hardwareMap) {
         GoBildaPinpointDriver configuredDriver = null;
         try {
-            GoBildaPinpointDriver device = hardwareMap.tryGet(GoBildaPinpointDriver.class, DEVICE_NAME);
+            GoBildaPinpointDriver device = hardwareMap.tryGet(
+                    GoBildaPinpointDriver.class, PinpointConstants.DEVICE_NAME);
             if (device != null) {
-                device.setOffsets(X_OFFSET_MM, Y_OFFSET_MM, DistanceUnit.MM);
-                device.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                        GoBildaPinpointDriver.EncoderDirection.FORWARD);
+                device.setOffsets(PinpointConstants.X_OFFSET_MM,
+                        PinpointConstants.Y_OFFSET_MM, DistanceUnit.MM);
+                device.setEncoderDirections(PinpointConstants.X_ENCODER_DIRECTION,
+                        PinpointConstants.Y_ENCODER_DIRECTION);
                 device.resetPosAndIMU();
                 configuredDriver = device;
                 status = "等待 READY";
             }
         } catch (RuntimeException error) {
             status = "初始化失败";
-            RobotLog.ee("KillerKingPinpoint", error, "Could not configure Pinpoint '%s'", DEVICE_NAME);
+            RobotLog.ee("KillerKingPinpoint", error, "Could not configure Pinpoint '%s'",
+                    PinpointConstants.DEVICE_NAME);
         }
         driver = configuredDriver;
     }
@@ -56,10 +53,10 @@ public final class Pinpoint extends SubsystemBase {
         }
 
         if (!startPoseSet) {
-            driver.setPosition(START_POSE);
+            driver.setPosition(PinpointConstants.START_POSE);
             startPoseSet = true;
             // The bulk read above still contains the pose from before this write.
-            pose = START_POSE;
+            pose = PinpointConstants.START_POSE;
             return;
         }
 

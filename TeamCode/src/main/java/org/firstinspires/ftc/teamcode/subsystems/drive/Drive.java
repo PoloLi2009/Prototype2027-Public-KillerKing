@@ -1,8 +1,7 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+package org.firstinspires.ftc.teamcode.subsystems.drive;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -18,15 +17,15 @@ public final class Drive extends SubsystemBase {
     private final IMU imu;
 
     public Drive(HardwareMap hardwareMap) {
-        frontLeft = configureMotor(hardwareMap, "0");
-        backLeft = configureMotor(hardwareMap, "1");
-        frontRight = configureMotor(hardwareMap, "2");
-        backRight = configureMotor(hardwareMap, "3");
+        frontLeft = configureMotor(hardwareMap, DriveConstants.FRONT_LEFT_MOTOR_NAME);
+        backLeft = configureMotor(hardwareMap, DriveConstants.BACK_LEFT_MOTOR_NAME);
+        frontRight = configureMotor(hardwareMap, DriveConstants.FRONT_RIGHT_MOTOR_NAME);
+        backRight = configureMotor(hardwareMap, DriveConstants.BACK_RIGHT_MOTOR_NAME);
 
-        imu = hardwareMap.get(IMU.class, "imu");
+        imu = hardwareMap.get(IMU.class, DriveConstants.IMU_NAME);
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
+                DriveConstants.IMU_LOGO_DIRECTION,
+                DriveConstants.IMU_USB_DIRECTION)));
         resetYaw();
     }
 
@@ -70,9 +69,9 @@ public final class Drive extends SubsystemBase {
 
     private static DcMotorEx configureMotor(HardwareMap hardwareMap, String name) {
         DcMotorEx motor = hardwareMap.get(DcMotorEx.class, name);
-        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor.setDirection(DcMotor.Direction.REVERSE);
+        motor.setMode(DriveConstants.MOTOR_RUN_MODE);
+        motor.setZeroPowerBehavior(DriveConstants.ZERO_POWER_BEHAVIOR);
+        motor.setDirection(DriveConstants.MOTOR_DIRECTION);
         return motor;
     }
 }

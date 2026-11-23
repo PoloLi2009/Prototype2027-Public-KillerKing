@@ -1,43 +1,38 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+package org.firstinspires.ftc.teamcode.subsystems.intake;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 public final class Intake extends SubsystemBase {
-    private static final double LIFT_STEP = 0.1;
-    private static final double LIFT_MIN = 0.2;
-    private static final double LIFT_MAX = 0.8;
-
     private final DcMotorEx intakeMotor;
     private final DcMotorEx feedMotor;
     private final Servo liftServo;
     private final Servo mirroredLiftServo;
-    private double liftPosition = 0.5;
+    private double liftPosition = IntakeConstants.INITIAL_LIFT_POSITION;
     private double power;
 
     public Intake(HardwareMap hardwareMap) {
-        intakeMotor = hardwareMap.get(DcMotorEx.class, "03");
-        feedMotor = hardwareMap.get(DcMotorEx.class, "02");
+        intakeMotor = hardwareMap.get(DcMotorEx.class, IntakeConstants.INTAKE_MOTOR_NAME);
+        feedMotor = hardwareMap.get(DcMotorEx.class, IntakeConstants.FEED_MOTOR_NAME);
         for (DcMotorEx motor : new DcMotorEx[]{intakeMotor, feedMotor}) {
-            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            motor.setMode(IntakeConstants.MOTOR_RUN_MODE);
+            motor.setZeroPowerBehavior(IntakeConstants.ZERO_POWER_BEHAVIOR);
         }
-        feedMotor.setDirection(DcMotor.Direction.REVERSE);
-        liftServo = hardwareMap.get(Servo.class, "s0");
-        mirroredLiftServo = hardwareMap.get(Servo.class, "s00");
+        feedMotor.setDirection(IntakeConstants.FEED_MOTOR_DIRECTION);
+        liftServo = hardwareMap.get(Servo.class, IntakeConstants.LIFT_SERVO_NAME);
+        mirroredLiftServo = hardwareMap.get(Servo.class, IntakeConstants.MIRRORED_LIFT_SERVO_NAME);
         setLiftPosition(liftPosition);
     }
 
     public void raiseLift() {
-        setLiftPosition(liftPosition - LIFT_STEP);
+        setLiftPosition(liftPosition - IntakeConstants.LIFT_STEP);
     }
 
     public void lowerLift() {
-        setLiftPosition(liftPosition + LIFT_STEP);
+        setLiftPosition(liftPosition + IntakeConstants.LIFT_STEP);
     }
 
     public double getLiftPosition() {
@@ -59,7 +54,7 @@ public final class Intake extends SubsystemBase {
     }
 
     private void setLiftPosition(double position) {
-        liftPosition = Range.clip(position, LIFT_MIN, LIFT_MAX);
+        liftPosition = Range.clip(position, IntakeConstants.LIFT_MIN, IntakeConstants.LIFT_MAX);
         liftServo.setPosition(liftPosition);
         mirroredLiftServo.setPosition(1.0 - liftPosition);
     }

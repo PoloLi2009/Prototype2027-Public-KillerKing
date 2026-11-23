@@ -3,11 +3,10 @@ package org.firstinspires.ftc.teamcode.commands;
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-import org.firstinspires.ftc.teamcode.subsystems.Drive;
+import org.firstinspires.ftc.teamcode.subsystems.drive.Drive;
+import org.firstinspires.ftc.teamcode.subsystems.drive.DriveConstants;
 
 public final class DriveCommand extends CommandBase {
-    private static final double DEADZONE = 0.05;
-
     private final Drive drive;
     private final Gamepad gamepad;
 
@@ -29,6 +28,6 @@ public final class DriveCommand extends CommandBase {
     }
 
     private static double deadzone(double input) {
-        return Math.abs(input) < DEADZONE ? 0 : input;
+        return Math.abs(input) < DriveConstants.JOYSTICK_DEADZONE ? 0 : input;
     }
 }
