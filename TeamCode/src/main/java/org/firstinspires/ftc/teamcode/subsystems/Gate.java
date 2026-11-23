@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public final class Gate extends SubsystemBase {
-    private static final double CLOSED_POSITION = 0.45;
+    private static final double CLOSED_POSITION = 0.55;
     private static final double OPEN_POSITION = 0.8;
 
     private final Servo servo;
@@ -16,8 +16,8 @@ public final class Gate extends SubsystemBase {
         servo.setPosition(CLOSED_POSITION);
     }
 
-    public void toggle() {
-        open = !open;
+    public void setOpen(boolean open) {
+        this.open = open;
         servo.setPosition(getPosition());
     }
 

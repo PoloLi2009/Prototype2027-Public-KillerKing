@@ -6,7 +6,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'Prototype-2027-Killer-King'
+rootProject.name = 'Prototype2027-Public-KillerKing'
 
 include ':FtcRobotController'
 include ':TeamCode'

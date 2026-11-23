@@ -1,4 +1,4 @@
-# Prototype-2027-Killer-King
+# Prototype2027-Public-KillerKing
 
 Killer King 的 Driver Station 手动程序为 `Ba`（Test 分组）。项目基于 FIRST FTC SDK v12.0，TeamCode 使用 FTCLib 2.1.1 的 CommandOpMode、CommandBase 和 SubsystemBase。
 
@@ -9,14 +9,16 @@ Killer King 的 Driver Station 手动程序为 `Ba`（Test 分组）。项目基
 | 左摇杆 / 右摇杆 X | 场地坐标平移 / 自转 |
 | START | 将当前车头方向设为场地前方 |
 | ↑ / ↓ | 升高 / 降低 Intake |
-| ← / → / X | 飞轮目标转速减 / 加 50 RPM / 清零 |
-| LB | 切换扳机舵机开关 |
-| RB | 按住时以设定功率运行 Intake 和通道 |
-| A / B | 设定功率减 / 加 0.1 |
-| RT / LT | 按扳机深度吸球 / 反转退球 |
-| Y / BACK | 云台位置加 / 减 0.1 |
+| ← / → | 飞轮目标转速减 / 加 25 RPM |
+| RT（右扳机） | 按下打开球挡，等待 100 ms 后按设定功率送料，松开停止发射送料 |
+| LT（左扳机） | 按下关闭球挡，按住时以设定功率吸球 |
+| LB（左肩键） | 按住时以设定功率反转 Intake 和通道 |
+| A / B | 吸球、送料和反转的共同功率减 / 加 0.1 |
+| Y | 开关云台自瞄，关闭时云台回中 |
 
-同时输入时，通道的优先级为 RB、RT、LT。飞轮初始目标转速为 0 RPM，RB 的初始功率为 1.0。
+按下 Driver Station 的 Start 后，飞轮目标为 3375 RPM，吸球、送料和反转初始功率为 1.0。电机优先级依次为 RT、LT、LB。LT 按下时优先关闭球挡。松开按键后，球挡保持上一次位置。
+
+Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。自瞄在 Y < 72 in 时瞄准 (84, 58) in，其余位置瞄准 (84, 96) in。云台中位朝向车尾，偏转范围为 ±135°。Pinpoint 无有效位姿时，自瞄保持当前舵机位置。
 
 ## 硬件配置
 
@@ -27,8 +29,9 @@ Killer King 的 Driver Station 手动程序为 `Ba`（Test 分组）。项目基
 | `03` / `02` | Intake 电机 / 通道电机（反向） |
 | `s0` / `s00` | Intake 抬升舵机，镜像控制 |
 | `s2` / `s01` | 云台舵机，同向控制 |
-| `s1` | 扳机舵机，关闭 0.45，打开 0.80 |
+| `s1` | 球挡舵机，关闭 0.55，打开 0.80 |
 | `imu` | Hub Logo 朝右，USB 口朝前 |
+| `od` | goBILDA Pinpoint，偏移 (-48, -125) mm，双编码器方向均为 FORWARD |
 
 ---
 

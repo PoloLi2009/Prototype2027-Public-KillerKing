@@ -11,17 +11,18 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public final class Shooter extends SubsystemBase {
     private static final double TICKS_PER_REV = 28.0;
     private static final double MAX_RPM = 6000;
-    private static final double RPM_STEP = 50;
-    private static final double KP = 0.0050;
+    private static final double INITIAL_RPM = 3375;
+    private static final double RPM_STEP = 25;
+    private static final double KP = 0.0030;
     private static final double KD = 0.0000;
-    private static final double KF = 0.00020;
+    private static final double KF = 0.000173;
     private static final double MIN_POWER = -0.1;
     private static final double MAX_POWER = 1.0;
     private static final double FILTER_ALPHA = 0.4;
 
     private final DcMotorEx encoderMotor;
     private final DcMotorEx followerMotor;
-    private double targetRpm;
+    private double targetRpm = INITIAL_RPM;
     private double filteredRpm;
     private double lastError;
     private double lastTime;
@@ -48,10 +49,6 @@ public final class Shooter extends SubsystemBase {
 
     public void decreaseRpm() {
         targetRpm = Range.clip(targetRpm - RPM_STEP, 0, MAX_RPM);
-    }
-
-    public void clearRpm() {
-        targetRpm = 0;
     }
 
     public void updateControl(double now) {
