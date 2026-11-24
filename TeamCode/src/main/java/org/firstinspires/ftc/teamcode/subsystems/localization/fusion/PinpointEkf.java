@@ -57,13 +57,23 @@ public class PinpointEkf {
     }
     public boolean addVisionMeasurement(Pose2d measurement, double time, double xyStd,
                                         double headingStd, Pose2d odomAtCapture) {
+        return applyVisionMeasurement(measurement, time, xyStd, headingStd, odomAtCapture, false);
+    }
+
+    public boolean reseedFromVision(Pose2d measurement, double time, double xyStd,
+                                    double headingStd, Pose2d odomAtCapture) {
+        return applyVisionMeasurement(measurement, time, xyStd, headingStd, odomAtCapture, true);
+    }
+
+    private boolean applyVisionMeasurement(Pose2d measurement, double time, double xyStd,
+                                           double headingStd, Pose2d odomAtCapture, boolean reseed) {
         if (history.isEmpty() || time<history.firstKey() || time>history.lastKey()
                 || time<=lastVisionTime) { status="Outside history / out of order"; return false; }
         State floor=history.floorEntry(time).getValue();
         State at=predict(floor,time,odomAtCapture);
         double[] z=vector(measurement);
         double[][] r=diagonal(xyStd*xyStd,xyStd*xyStd,headingStd*headingStd);
-        if (!seeded) {
+        if (!seeded || reseed) {
             at.x=z; at.p=r; lastNis=0;
         } else {
             double[] error={z[0]-at.x[0],z[1]-at.x[1],wrap(z[2]-at.x[2])};

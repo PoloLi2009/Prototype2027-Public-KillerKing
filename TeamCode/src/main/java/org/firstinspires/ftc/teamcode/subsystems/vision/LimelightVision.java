@@ -12,9 +12,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 
 /** Acquires each MT1 frame once. Raw fmap coordinates are not robot field coordinates yet. */
 public class LimelightVision extends SubsystemBase {
+    public enum Alliance { BLUE, RED }
+
     public static final class Frame {
         public final Pose3D rawPose;
         public final long approximateCaptureNanos;
@@ -34,15 +37,17 @@ public class LimelightVision extends SubsystemBase {
     }
 
     private final Limelight3A camera;
-    private final ExecutorService pipelineExecutor;
-    private boolean blueAlliance = true;
-    private double lastTimestamp = Double.NaN;
-    private Future<?> pendingPipelineSwitch;
+    private final Alliance alliance;
+    private ExecutorService pipelineExecutor;
+    private Future<?> pipelineRequest;
     private long lastPipelineRequestNanos;
+    private boolean pipelineSetupFinished;
+    private double lastTimestamp = Double.NaN;
     private Frame frame;
     private String status = "Waiting for frame";
 
-    public LimelightVision(HardwareMap hardwareMap) {
+    public LimelightVision(HardwareMap hardwareMap, Alliance alliance) {
+        this.alliance = alliance;
         Limelight3A device = null;
         try {
             device = hardwareMap.tryGet(Limelight3A.class, VisionConstants.hardwareName);
@@ -58,15 +63,46 @@ public class LimelightVision extends SubsystemBase {
             status = "Initialization failed";
         }
         camera = device;
-        pipelineExecutor = camera == null ? null : Executors.newSingleThreadExecutor();
     }
 
-    public void toggleAlliance() {
-        blueAlliance = !blueAlliance;
-        frame = null;
-        lastTimestamp = Double.NaN;
-        if (camera != null) {
-            status = "Waiting for new pipeline frame";
+    public void preparePipeline(BooleanSupplier inInit) {
+        if (camera == null || pipelineSetupFinished || !inInit.getAsBoolean()) {
+            return;
+        }
+        if (!camera.isConnected()) {
+            status = "Waiting for Limelight connection";
+            return;
+        }
+
+        int desiredPipeline = getExpectedPipeline();
+        LLResult result = camera.getLatestResult();
+        if (result != null && result.getPipelineIndex() == desiredPipeline) {
+            status = "Pipeline P" + desiredPipeline + " ready";
+            return;
+        }
+
+        status = "Selecting P" + desiredPipeline + "; waiting for camera confirmation";
+        long now = System.nanoTime();
+        if (pipelineRequest != null && (!pipelineRequest.isDone()
+                || now - lastPipelineRequestNanos < TimeUnit.MILLISECONDS.toNanos(VisionConstants.pipelineRetryMs))) {
+            return;
+        }
+        if (pipelineExecutor == null) {
+            pipelineExecutor = Executors.newSingleThreadExecutor();
+        }
+        lastPipelineRequestNanos = now;
+        // The SDK's HTTP request can block. Keep it off the OpMode thread and start it only in INIT.
+        pipelineRequest = pipelineExecutor.submit(() -> {
+            if (inInit.getAsBoolean() && !Thread.currentThread().isInterrupted()) {
+                camera.pipelineSwitch(desiredPipeline);
+            }
+        });
+    }
+
+    public void finishPipelineSetup() {
+        pipelineSetupFinished = true;
+        if (pipelineExecutor != null) {
+            pipelineExecutor.shutdownNow();
         }
     }
 
@@ -78,9 +114,9 @@ public class LimelightVision extends SubsystemBase {
         LLResult result = camera.getLatestResult();
         if (result == null) { status = "No result"; return; }
         int expectedPipeline = getExpectedPipeline();
-        if (result.getPipelineIndex() != expectedPipeline) {
-            requestPipeline(expectedPipeline);
-            status = "Waiting for pipeline";
+        int actualPipeline = result.getPipelineIndex();
+        if (actualPipeline != expectedPipeline) {
+            status = "Wrong pipeline: camera P" + actualPipeline + ", expected P" + expectedPipeline;
             return;
         }
         if (!result.isValid()) { status = "No valid result"; return; }
@@ -108,8 +144,8 @@ public class LimelightVision extends SubsystemBase {
         }
         // Red and blue HIVE structures tilt independently; never apply one correction to both.
         StringBuilder unknownTagIds = new StringBuilder();
-        int minTagId = blueAlliance ? VisionConstants.blueMinTagId : VisionConstants.redMinTagId;
-        int maxTagId = blueAlliance ? VisionConstants.blueMaxTagId : VisionConstants.redMaxTagId;
+        int minTagId = isBlueAlliance() ? VisionConstants.blueMinTagId : VisionConstants.redMinTagId;
+        int maxTagId = isBlueAlliance() ? VisionConstants.blueMaxTagId : VisionConstants.redMaxTagId;
         for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
             int id = tag.getFiducialId();
             if (id < minTagId || id > maxTagId) {
@@ -127,33 +163,21 @@ public class LimelightVision extends SubsystemBase {
         }
         // Camera time has a different clock origin; estimate host capture time from age + latency.
         long captureNanos = System.nanoTime() - (long) ((age + latency) * 1e6);
-        frame = new Frame(pose, captureNanos, timestamp,
-                result.getPipelineIndex(), result.getBotposeTagCount(), distance);
+        frame = new Frame(pose, captureNanos, timestamp, actualPipeline,
+                result.getBotposeTagCount(), distance);
         status = "New MT1 frame";
-    }
-
-    private void requestPipeline(int pipeline) {
-        long now = System.nanoTime();
-        long retryNanos = TimeUnit.SECONDS.toNanos(VisionConstants.pipelineRetrySeconds);
-        if (pendingPipelineSwitch != null && (!pendingPipelineSwitch.isDone()
-                || now - lastPipelineRequestNanos < retryNanos)) {
-            return;
-        }
-        lastPipelineRequestNanos = now;
-        // The SDK switches pipelines through a synchronous HTTP request.
-        pendingPipelineSwitch = pipelineExecutor.submit(() -> camera.pipelineSwitch(pipeline));
     }
 
     /** Returns only a new frame from the most recent periodic call, otherwise null. */
     public Frame getNewFrame() { return frame; }
-    public boolean isBlueAlliance() { return blueAlliance; }
+    public boolean isBlueAlliance() { return alliance == Alliance.BLUE; }
     public int getExpectedPipeline() {
-        return blueAlliance ? VisionConstants.bluePipeline : VisionConstants.redPipeline;
+        return isBlueAlliance() ? VisionConstants.bluePipeline : VisionConstants.redPipeline;
     }
     public String getStatus() { return status; }
     public void stop() {
+        finishPipelineSetup();
         if (camera != null) {
-            pipelineExecutor.shutdownNow();
             camera.stop();
         }
         frame = null;

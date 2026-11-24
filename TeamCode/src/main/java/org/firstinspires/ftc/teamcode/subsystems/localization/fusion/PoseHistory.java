@@ -10,15 +10,22 @@ public class PoseHistory {
     public static final double DURATION_SECONDS = 1.5;
     public static final class Sample {
         public final double time, turretDegrees;
+        public final double turretTrackingErrorDegrees;
         public final Pose2d odometry;
-        public Sample(double time, Pose2d odometry, double turretDegrees) {
-            this.time = time; this.odometry = odometry; this.turretDegrees = turretDegrees;
+        private Sample(double time, Pose2d odometry, double turretDegrees, double turretTrackingErrorDegrees) {
+            this.time = time;
+            this.odometry = odometry;
+            this.turretDegrees = turretDegrees;
+            this.turretTrackingErrorDegrees = turretTrackingErrorDegrees;
         }
     }
     private final TreeMap<Double, Sample> samples = new TreeMap<>();
     public void clear() { samples.clear(); }
     public void add(double time, Pose2d odometry, double turretDegrees) {
-        samples.put(time, new Sample(time, odometry, turretDegrees));
+        add(time, odometry, turretDegrees, 0);
+    }
+    public void add(double time, Pose2d odometry, double turretDegrees, double turretTrackingErrorDegrees) {
+        samples.put(time, new Sample(time, odometry, turretDegrees, turretTrackingErrorDegrees));
         while (samples.size() > 2 && samples.firstKey() < time - DURATION_SECONDS)
             samples.pollFirstEntry();
     }
@@ -30,6 +37,7 @@ public class PoseHistory {
         Twist2d twist = a.getValue().odometry.log(b.getValue().odometry);
         return new Sample(time, a.getValue().odometry.exp(new Twist2d(
                 twist.dx * t, twist.dy * t, twist.dtheta * t)),
-                a.getValue().turretDegrees + t * (b.getValue().turretDegrees - a.getValue().turretDegrees));
+                a.getValue().turretDegrees + t * (b.getValue().turretDegrees - a.getValue().turretDegrees),
+                Math.max(a.getValue().turretTrackingErrorDegrees, b.getValue().turretTrackingErrorDegrees));
     }
 }

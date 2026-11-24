@@ -8,8 +8,9 @@ public final class VisionConstants {
     public static final int bluePipeline = 0;
     public static final int redPipeline = 1;
     public static final int pollRateHz = 50;
+    public static final long pipelineInitPollMs = 50;
+    public static final long pipelineRetryMs = 1000;
     public static final long maxFrameAgeMs = 200;
-    public static final long pipelineRetrySeconds = 1;
     public static final int blueMinTagId = 38;
     public static final int blueMaxTagId = 45;
     public static final int redMinTagId = 30;

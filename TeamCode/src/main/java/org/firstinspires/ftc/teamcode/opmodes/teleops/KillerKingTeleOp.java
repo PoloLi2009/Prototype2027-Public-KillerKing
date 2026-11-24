@@ -17,11 +17,14 @@ import org.firstinspires.ftc.teamcode.subsystems.pinpoint.Pinpoint;
 import org.firstinspires.ftc.teamcode.subsystems.shooter.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.turret.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision;
+import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision.Alliance;
+import org.firstinspires.ftc.teamcode.subsystems.vision.VisionConstants;
 
 import java.util.function.BooleanSupplier;
 
 @TeleOp(name = "Ba", group = "Test")
-public final class KillerKingTeleOp extends CommandOpMode {
+public class KillerKingTeleOp extends CommandOpMode {
+    private final Alliance alliance;
     private Drive drive;
     private Shooter shooter;
     private Intake intake;
@@ -32,6 +35,14 @@ public final class KillerKingTeleOp extends CommandOpMode {
     private VisionReadCommand visionReadCommand;
     private TurretAimCommand turretAimCommand;
 
+    public KillerKingTeleOp() {
+        this(Alliance.BLUE);
+    }
+
+    protected KillerKingTeleOp(Alliance alliance) {
+        this.alliance = alliance;
+    }
+
     @Override
     public void initialize() {
         drive = new Drive(hardwareMap);
@@ -40,7 +51,7 @@ public final class KillerKingTeleOp extends CommandOpMode {
         gate = new Gate(hardwareMap);
         pinpoint = new Pinpoint(hardwareMap);
         Turret turret = new Turret(hardwareMap);
-        vision = new LimelightVision(hardwareMap);
+        vision = new LimelightVision(hardwareMap, alliance);
         visionReadCommand = new VisionReadCommand(vision, pinpoint, turret, new VisionLocalization());
         vision.setDefaultCommand(visionReadCommand);
 
@@ -48,7 +59,7 @@ public final class KillerKingTeleOp extends CommandOpMode {
         shooter.setDefaultCommand(new ShooterCommand(shooter, this::getRuntime));
         feedCommand = new FeedCommand(intake, gate, gamepad1, this::getRuntime);
         intake.setDefaultCommand(feedCommand);
-        turretAimCommand = new TurretAimCommand(visionReadCommand::getAimPose, turret);
+        turretAimCommand = new TurretAimCommand(visionReadCommand::getAimPose, vision::isBlueAlliance, turret);
         turret.setDefaultCommand(turretAimCommand);
 
         onPress(() -> gamepad1.dpad_left, shooter::decreaseRpm);
@@ -58,13 +69,12 @@ public final class KillerKingTeleOp extends CommandOpMode {
         onPress(() -> gamepad1.a, feedCommand::decreaseFirePower);
         onPress(() -> gamepad1.b, feedCommand::increaseFirePower);
         onPress(() -> gamepad1.y, turretAimCommand::toggleAim);
-        onPress(() -> gamepad1.x, vision::toggleAlliance);
         onPress(() -> gamepad1.right_stick_button, visionReadCommand::toggleVisionForAim);
         onPress(() -> gamepad1.start, drive::resetYaw);
 
         telemetry.addLine("Killer King 初始化完成");
         telemetry.addLine("←/→ 调 RPM  LT 吸球  RT 射球  LB 反转  A/B 调功率");
-        telemetry.addLine("↑/↓ 抬升  Y 自瞄  X 切 Limelight 红蓝地图  START 重置驾驶朝向");
+        telemetry.addLine("↑/↓ 抬升  Y 自瞄  START 重置驾驶朝向");
         telemetry.addLine("右摇杆按下：切换自瞄位姿 Pinpoint / EKF");
         pinpoint.addTelemetry(telemetry);
         visionReadCommand.addTelemetry(telemetry);
@@ -76,7 +86,14 @@ public final class KillerKingTeleOp extends CommandOpMode {
         reset();
         try {
             initialize();
-            waitForStart();
+            while (opModeInInit()) {
+                vision.preparePipeline(this::opModeInInit);
+                telemetry.addData("Limelight INIT", "P%d / %s",
+                        vision.getExpectedPipeline(), vision.getStatus());
+                telemetry.update();
+                sleep(VisionConstants.pipelineInitPollMs);
+            }
+            vision.finishPipelineSetup();
             if (isStopRequested()) {
                 return;
             }

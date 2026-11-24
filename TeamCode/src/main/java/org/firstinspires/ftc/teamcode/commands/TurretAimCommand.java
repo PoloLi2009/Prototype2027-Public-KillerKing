@@ -9,18 +9,22 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.subsystems.turret.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.turret.TurretConstants;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public final class TurretAimCommand extends CommandBase {
     private final Supplier<Pose2D> poseSource;
+    private final BooleanSupplier blueAlliance;
     private final Turret turret;
     private boolean enabled;
+    private double targetX = TurretConstants.BLUE_TARGET_X_INCHES;
     private double targetY = TurretConstants.LOW_TARGET_Y_INCHES;
     private double relativeTargetDegrees;
     private boolean targetReachable;
 
-    public TurretAimCommand(Supplier<Pose2D> poseSource, Turret turret) {
+    public TurretAimCommand(Supplier<Pose2D> poseSource, BooleanSupplier blueAlliance, Turret turret) {
         this.poseSource = poseSource;
+        this.blueAlliance = blueAlliance;
         this.turret = turret;
         addRequirements(turret);
     }
@@ -45,9 +49,11 @@ public final class TurretAimCommand extends CommandBase {
 
         double x = pose.getX(DistanceUnit.INCH);
         double y = pose.getY(DistanceUnit.INCH);
+        targetX = blueAlliance.getAsBoolean()
+                ? TurretConstants.BLUE_TARGET_X_INCHES : TurretConstants.RED_TARGET_X_INCHES;
         targetY = y < TurretConstants.SWITCH_Y_INCHES
                 ? TurretConstants.LOW_TARGET_Y_INCHES : TurretConstants.HIGH_TARGET_Y_INCHES;
-        double fieldTargetDegrees = Math.toDegrees(Math.atan2(targetY - y, TurretConstants.TARGET_X_INCHES - x));
+        double fieldTargetDegrees = Math.toDegrees(Math.atan2(targetY - y, targetX - x));
         relativeTargetDegrees = wrapDegrees(fieldTargetDegrees - pose.getHeading(AngleUnit.DEGREES));
         double offsetDegrees = wrapDegrees(relativeTargetDegrees - TurretConstants.CENTER_FACING_DEGREES);
         targetReachable = Math.abs(offsetDegrees) <= TurretConstants.MAX_OFFSET_DEGREES;
@@ -60,7 +66,7 @@ public final class TurretAimCommand extends CommandBase {
         telemetry.addData("云台舵机位置", "%.3f", turret.getPosition());
         if (enabled && hasPose) {
             double offset = turret.getOffsetDegrees();
-            telemetry.addData("自瞄目标 (in)", "(%.0f, %.0f)", TurretConstants.TARGET_X_INCHES, targetY);
+            telemetry.addData("自瞄目标 (in)", "(%.0f, %.0f)", targetX, targetY);
             telemetry.addData("目标相对车头", "%.1f°", relativeTargetDegrees);
             telemetry.addData("云台相对车尾偏移", "%.1f° (限位 ±%.0f°)",
                     offset, TurretConstants.MAX_OFFSET_DEGREES);

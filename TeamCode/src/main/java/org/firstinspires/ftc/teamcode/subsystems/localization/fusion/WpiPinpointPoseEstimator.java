@@ -26,12 +26,19 @@ public class WpiPinpointPoseEstimator {
         return anchorRaw == null ? odometry : anchorEstimate.plus(odometry.minus(anchorRaw));
     }
     public boolean addVisionMeasurement(Pose2d vision, double time, double xyStd, double headingStd) {
+        return applyVisionMeasurement(vision, time, xyStd, headingStd, false);
+    }
+    public void reseedFromVision(Pose2d vision, double time) {
+        applyVisionMeasurement(vision, time, 0, 0, true);
+    }
+    private boolean applyVisionMeasurement(Pose2d vision, double time, double xyStd,
+                                           double headingStd, boolean reseed) {
         PoseHistory.Sample sample = history.sample(time);
         if (sample == null || time <= lastVisionTime) return false;
-        Pose2d predicted = compensate(sample.odometry);
-        if (anchorRaw == null) {
+        if (anchorRaw == null || reseed) {
             anchorEstimate = vision;
         } else {
+            Pose2d predicted = compensate(sample.odometry);
             Twist2d error = predicted.log(vision);
             if (Math.hypot(vision.getX()-predicted.getX(), vision.getY()-predicted.getY()) > 0.75
                     || Math.abs(error.dtheta) > Math.toRadians(45)) return false;

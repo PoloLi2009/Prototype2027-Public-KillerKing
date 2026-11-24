@@ -9,6 +9,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.subsystems.localization.VisionLocalization;
+import org.firstinspires.ftc.teamcode.subsystems.localization.VisionLocalizationConstants;
 import org.firstinspires.ftc.teamcode.subsystems.pinpoint.Pinpoint;
 import org.firstinspires.ftc.teamcode.subsystems.turret.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision;
@@ -20,6 +21,7 @@ public final class VisionReadCommand extends CommandBase {
     private final Turret turret;
     private final VisionLocalization localization;
     private boolean visionForAimEnabled;
+    private double estimatedTurretOffset;
 
     public VisionReadCommand(LimelightVision vision, Pinpoint pinpoint, Turret turret,
                              VisionLocalization localization) {
@@ -32,18 +34,16 @@ public final class VisionReadCommand extends CommandBase {
 
     @Override
     public void execute() {
+        double now = System.nanoTime() / 1e9;
         Pose2D pose = pinpoint.getPose();
-        if (pose == null) {
-            localization.clear();
-            return;
-        }
-
         // With the turret centered, the web configuration uses chassis forward as zero.
-        // The turret command reports CCW degrees, while the Spinup solver expects CW.
-        localization.update(System.nanoTime() / 1e9,
-                new Pose2d(pose.getX(DistanceUnit.METER), pose.getY(DistanceUnit.METER),
-                        new Rotation2d(pose.getHeading(AngleUnit.RADIANS))),
-                -turret.getOffsetDegrees(), vision.getNewFrame());
+        // The turret estimate is CCW; the Spinup solver expects CW.
+        estimatedTurretOffset = turret.getEstimatedOffsetDegrees(now);
+        Pose2d odometry = pose == null ? null : new Pose2d(
+                pose.getX(DistanceUnit.METER), pose.getY(DistanceUnit.METER),
+                new Rotation2d(pose.getHeading(AngleUnit.RADIANS)));
+        localization.update(now, odometry, -estimatedTurretOffset,
+                Math.abs(turret.getOffsetDegrees() - estimatedTurretOffset), vision.getNewFrame());
     }
 
     public void toggleVisionForAim() {
@@ -60,7 +60,7 @@ public final class VisionReadCommand extends CommandBase {
     }
 
     private boolean usesFusedPose() {
-        return visionForAimEnabled && localization.hasFieldPose() && pinpoint.getPose() != null;
+        return visionForAimEnabled && localization.hasUsableVisionForAim() && pinpoint.getPose() != null;
     }
 
     public void addTelemetry(Telemetry telemetry) {
@@ -68,8 +68,9 @@ public final class VisionReadCommand extends CommandBase {
                 vision.getExpectedPipeline(), vision.getStatus());
         telemetry.addData("Vision fusion", "%s (%d accepted / %d rejected)", localization.getStatus(),
                 localization.getAcceptedCount(), localization.getRejectedCount());
-        telemetry.addData("Aim pose source", !visionForAimEnabled
-                ? "Pinpoint (vision preview)" : usesFusedPose() ? "EKF" : "Pinpoint (waiting for EKF)");
+        telemetry.addData("Aim pose source", getAimPoseStatus());
+        telemetry.addData("Camera turret estimate / command", "%.1f° / %.1f°",
+                estimatedTurretOffset, turret.getOffsetDegrees());
         addPoseTelemetry(telemetry, "Limelight corrected (last)", localization.getCorrectedVision());
         if (localization.hasFieldPose()) {
             addPoseTelemetry(telemetry, "Pinpoint EKF", localization.getEstimatedPosition());
@@ -79,6 +80,16 @@ public final class VisionReadCommand extends CommandBase {
         if (Double.isFinite(localization.getHiveTiltDegrees())) {
             telemetry.addData("HIVE tilt", "%.1f°", localization.getHiveTiltDegrees());
         }
+    }
+
+    private String getAimPoseStatus() {
+        if (pinpoint.getPose() == null) return "Holding (waiting for Pinpoint)";
+        if (!visionForAimEnabled) return "Pinpoint (vision preview)";
+        if (usesFusedPose()) {
+            return localization.getLastVisionAgeSeconds() > VisionLocalizationConstants.VISION_COAST_AFTER_SECONDS
+                    ? "EKF (odometry only)" : "EKF (vision recent)";
+        }
+        return localization.hasFieldPose() ? "Pinpoint (vision expired)" : "Pinpoint (waiting for EKF)";
     }
 
     private static void addPoseTelemetry(Telemetry telemetry, String label, Pose2d pose) {

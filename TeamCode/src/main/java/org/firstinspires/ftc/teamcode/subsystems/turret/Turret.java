@@ -9,6 +9,8 @@ public final class Turret extends SubsystemBase {
     private final Servo firstServo;
     private final Servo secondServo;
     private double offsetDegrees;
+    private double estimatedOffsetDegrees;
+    private double estimateTimeSeconds = Double.NaN;
 
     public Turret(HardwareMap hardwareMap) {
         firstServo = hardwareMap.get(Servo.class, TurretConstants.FIRST_SERVO_NAME);
@@ -17,6 +19,7 @@ public final class Turret extends SubsystemBase {
     }
 
     public void setOffsetDegrees(double degrees) {
+        getEstimatedOffsetDegrees(System.nanoTime() / 1e9);
         offsetDegrees = Range.clip(degrees,
                 -TurretConstants.MAX_OFFSET_DEGREES, TurretConstants.MAX_OFFSET_DEGREES);
         double position = getPosition();
@@ -26,6 +29,20 @@ public final class Turret extends SubsystemBase {
 
     public double getOffsetDegrees() {
         return offsetDegrees;
+    }
+
+    public double getEstimatedOffsetDegrees(double nowSeconds) {
+        if (Double.isFinite(estimateTimeSeconds)) {
+            if (nowSeconds <= estimateTimeSeconds) {
+                return estimatedOffsetDegrees;
+            }
+            double travel = (nowSeconds - estimateTimeSeconds)
+                    * TurretConstants.ESTIMATED_SPEED_DEGREES_PER_SECOND;
+            estimatedOffsetDegrees += Range.clip(offsetDegrees - estimatedOffsetDegrees,
+                    -travel, travel);
+        }
+        estimateTimeSeconds = nowSeconds;
+        return estimatedOffsetDegrees;
     }
 
     public double getPosition() {

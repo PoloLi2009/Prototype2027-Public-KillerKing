@@ -1,31 +1,35 @@
 package org.firstinspires.ftc.teamcode.tests;
 
 import com.arcrobotics.ftclib.command.CommandOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.commands.VisionReadCommand;
-import org.firstinspires.ftc.teamcode.subsystems.Pinpoint;
-import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.localization.VisionLocalization;
+import org.firstinspires.ftc.teamcode.subsystems.pinpoint.Pinpoint;
+import org.firstinspires.ftc.teamcode.subsystems.turret.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision;
+import org.firstinspires.ftc.teamcode.subsystems.vision.VisionConstants;
 
-@TeleOp(name = "Vision Fusion Command Test", group = "Test")
-@SuppressWarnings("unused") // FTC discovers this class through @TeleOp.
-public final class VisionFusionCommandTest extends CommandOpMode {
+public abstract class VisionFusionCommandTest extends CommandOpMode {
+    private final LimelightVision.Alliance alliance;
     private Pinpoint pinpoint;
     private LimelightVision vision;
     private VisionReadCommand visionReadCommand;
-    private boolean previousX;
+
+    protected VisionFusionCommandTest(LimelightVision.Alliance alliance) {
+        this.alliance = alliance;
+    }
 
     @Override
     public void initialize() {
         pinpoint = new Pinpoint(hardwareMap);
         Turret turret = new Turret(hardwareMap);
-        vision = new LimelightVision(hardwareMap);
+        vision = new LimelightVision(hardwareMap, alliance);
         VisionLocalization localization = new VisionLocalization();
         visionReadCommand = new VisionReadCommand(vision, pinpoint, turret, localization);
 
-        telemetry.addLine("Center the turret before START. Press X to switch alliance maps.");
+        telemetry.addLine("Center the turret before START.");
+        telemetry.addData("Required camera pipeline", "%s P%d (selected in INIT)",
+                alliance, vision.getExpectedPipeline());
         telemetry.update();
     }
 
@@ -34,7 +38,14 @@ public final class VisionFusionCommandTest extends CommandOpMode {
         reset();
         try {
             initialize();
-            waitForStart();
+            while (opModeInInit()) {
+                vision.preparePipeline(this::opModeInInit);
+                telemetry.addData("Limelight INIT", "P%d / %s",
+                        vision.getExpectedPipeline(), vision.getStatus());
+                telemetry.update();
+                sleep(VisionConstants.pipelineInitPollMs);
+            }
+            vision.finishPipelineSetup();
             if (isStopRequested()) {
                 return;
             }
@@ -53,12 +64,6 @@ public final class VisionFusionCommandTest extends CommandOpMode {
 
     @Override
     public void run() {
-        boolean x = gamepad1.x;
-        if (x && !previousX) {
-            vision.toggleAlliance();
-        }
-        previousX = x;
-
         super.run();
 
         pinpoint.addTelemetry(telemetry);
