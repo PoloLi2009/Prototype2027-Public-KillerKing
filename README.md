@@ -52,6 +52,21 @@ Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。蓝方�
 
 视觉超过 0.35 s 没有刷新时，遥测显示 `EKF (odometry only)`。超过 1.0 s 后，自瞄自动回退到 Pinpoint。重新识别标签后，正常校正可立即恢复 EKF。超过原有异常值阈值的修正，需要三帧经里程计对齐后相互一致才会重新定位。Pinpoint 掉读 0.25 s 内保留滤波状态，掉读期间云台保持位置，无相机时可使用 Pinpoint 自瞄。
 
+## 自动 `Red3Tips1.0`（Auto 分组）
+
+自动使用 Pedro Pathing 3.0.2（`com.pedropathing:revhub` / `tuning`）。首次使用前在 Driver Station 运行 AutoTune，依次完成 Mecanum、Pinpoint、Foresight 三个流程，把导出的配置粘贴到 `pedro/Constants.java`。`foresightConfig` 为空时，自动只提示调参，不会驱动底盘。Pinpoint 轮子类型暂按 goBILDA 4-bar 填写，需按实车确认。
+
+路线在 `opmodes/autos/Red3Tips_1_0.java`，与 Pedro Visualizer 导出一致，起点 (54.37, 8.22) in、270°，车头为 Intake。流程：Garden 吸球 → 远端射击 → Far flower 吸球 → 远端射击 → 队友预装球 → 近端射击 → Side flower 吸球 → 近端射击 → 停靠。吸球时关闭球挡并以 1.0 功率运行 Intake 和通道；射击时等待飞轮转速和云台到位（最长 1.5 s），打开球挡 100 ms 后送料 900 ms。云台使用手动程序的 `TurretAimCommand` 和红方目标，在接近射击点时提前瞄准。
+
+| 射击点 | 位置 (in) | 车身朝向 | 云台偏转 | 舵机位置 |
+| --- | --- | --- | --- | --- |
+| 02 远端 | (39.28, 109.62) | 70° | +72.6° | 0.293 |
+| 04 远端 | (37.90, 116.02) | 90° | +44.4° | 0.373 |
+| 06 近端 | (34.98, 37.91) | 120° | +98.4° | 0.219 |
+| 08 近端 | (33.21, 35.28) | 180° | +40.1° | 0.385 |
+
+06 在经过 HIVE 之前保持 90°（与 HIVE 间隙约 2.1 in），最后 10% 才转到 120°，避免近端射击时云台接近 135° 限位；07 在前 60% 路程转到 180°，正对 Side flower。远端和近端飞轮转速暂与手动程序相同（3375 RPM），在 `Red3TipsAuto` 中按实测调整。
+
 ---
 
 ## NOTICE

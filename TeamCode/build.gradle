@@ -28,3 +28,10 @@ dependencies {
     implementation project(':FtcRobotController')
     implementation 'org.ftclib.ftclib:core:2.1.1'
 }
+
+// Pedro Pathing (autonomous path following + AutoTune), same versions as the Overturn robot.
+repositories { maven { url 'https://repo.dairy.foundation/releases/' } }
+dependencies {
+    implementation 'com.pedropathing:revhub:3.0.2'
+    implementation 'com.pedropathing:tuning:1.0.1'
+}

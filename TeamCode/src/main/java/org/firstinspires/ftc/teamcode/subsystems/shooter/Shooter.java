@@ -41,6 +41,19 @@ public final class Shooter extends SubsystemBase {
                 ShooterConstants.MIN_RPM, ShooterConstants.MAX_RPM);
     }
 
+    /** Sets the flywheel target (used by autonomous); the TeleOp keeps using the D-pad steps. */
+    public void setTargetRpm(double rpm) {
+        targetRpm = Range.clip(rpm, ShooterConstants.MIN_RPM, ShooterConstants.MAX_RPM);
+    }
+
+    public double getTargetRpm() {
+        return targetRpm;
+    }
+
+    public double getFilteredRpm() {
+        return filteredRpm;
+    }
+
     public void updateControl(double now) {
         double dt = Math.max(now - lastTime, ShooterConstants.MIN_CONTROL_DT_SECONDS);
         lastTime = now;
