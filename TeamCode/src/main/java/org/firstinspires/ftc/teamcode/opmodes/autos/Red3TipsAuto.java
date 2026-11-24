@@ -165,7 +165,9 @@ public class Red3TipsAuto extends CommandOpMode {
     public void run() {
         follower.update();
         if (!poseValid(follower.pose())) {
-            stopDrive();
+            // Cut motor power for this loop but keep the active path: follower.stop() would end it,
+            // and followPath would then treat the glitch as arriving at the endpoint.
+            follower.drivetrain.stop();
             if (badPoseSinceMs < 0) badPoseSinceMs = clock.milliseconds();
             if (clock.milliseconds() - badPoseSinceMs > BAD_POSE_ABORT_MS) {
                 RobotLog.ww("Red3Tips1.0", "Stopped on %s: Pinpoint pose invalid", step);
