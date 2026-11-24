@@ -33,6 +33,7 @@ public class KillerKingTeleOp extends CommandOpMode {
     private LimelightVision vision;
     private FeedCommand feedCommand;
     private VisionReadCommand visionReadCommand;
+    private VisionLocalization localization;
     private TurretAimCommand turretAimCommand;
 
     public KillerKingTeleOp() {
@@ -52,7 +53,8 @@ public class KillerKingTeleOp extends CommandOpMode {
         pinpoint = new Pinpoint(hardwareMap);
         Turret turret = new Turret(hardwareMap);
         vision = new LimelightVision(hardwareMap, alliance);
-        visionReadCommand = new VisionReadCommand(vision, pinpoint, turret, new VisionLocalization());
+        localization = new VisionLocalization();
+        visionReadCommand = new VisionReadCommand(vision, pinpoint, turret, localization);
         vision.setDefaultCommand(visionReadCommand);
 
         drive.setDefaultCommand(new DriveCommand(drive, gamepad1));
@@ -129,6 +131,13 @@ public class KillerKingTeleOp extends CommandOpMode {
         pinpoint.addTelemetry(telemetry);
         visionReadCommand.addTelemetry(telemetry);
         shooter.addTelemetry(telemetry);
+        double hiveTiltDegrees = localization.getHiveTiltDegrees();
+        if (Double.isFinite(hiveTiltDegrees)) {
+            telemetry.addData("HIVE motion / tilt", "%s / %+.1f°",
+                    localization.getHiveMotionState(), hiveTiltDegrees);
+        } else {
+            telemetry.addData("HIVE motion / tilt", "UNKNOWN / No fresh tilt");
+        }
         telemetry.addData("Intake 抬升", "%.2f", intake.getLiftPosition());
         turretAimCommand.addTelemetry(telemetry);
         telemetry.addData("球挡", "%s (%.2f)", gate.isOpen() ? "开" : "关", gate.getPosition());

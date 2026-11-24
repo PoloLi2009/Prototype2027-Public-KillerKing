@@ -16,12 +16,27 @@ import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision;
 
 /** Spinup HIVE correction and delayed pose fusion, in Killer King's field frame. */
 public final class VisionLocalization extends SubsystemBase {
+    public enum HiveMotionState {
+        STILL, TILTING_TO_OTHER_SIDE, UNKNOWN
+    }
+
+    private static final double HIVE_MOTION_WINDOW_SECONDS = 0.15;
+    private static final double HIVE_STILL_CHANGE_DEGREES = 1.0;
+    private static final double HIVE_MOTION_CHANGE_DEGREES = 3.0;
+    private static final double HIVE_MIN_SIDE_DEGREES = 3.0;
+
     private final PoseHistory history = new PoseHistory();
     private final WpiPinpointPoseEstimator wpi = new WpiPinpointPoseEstimator();
     private final PinpointEkf ekf = new PinpointEkf();
     private Pose2d correctedVision;
     private String status = "Waiting for Pinpoint / vision";
     private double tilt = Double.NaN;
+    private double motionWindowStart = Double.NaN;
+    private double motionWindowTilt;
+    private double motionWindowMin;
+    private double motionWindowMax;
+    private double stableHiveSide;
+    private HiveMotionState hiveMotionState = HiveMotionState.UNKNOWN;
     private double lastTilt = Double.NaN;
     private double stableSince;
     private double lastFrameTime = Double.NEGATIVE_INFINITY;
@@ -44,6 +59,7 @@ public final class VisionLocalization extends SubsystemBase {
         ekf.reset();
         correctedVision = null;
         tilt = Double.NaN;
+        clearHiveMotion();
         lastTilt = Double.NaN;
         lastOdometryTime = Double.NaN;
         lastAcceptedTime = Double.NaN;
@@ -120,19 +136,23 @@ public final class VisionLocalization extends SubsystemBase {
         if (result == null) {
             correctedVision = null;
             tilt = Double.NaN;
+            clearHiveMotion();
             lastTilt = Double.NaN;
             reject("HIVE geometry / floor / level mismatch");
             return;
         }
 
-        tilt = result.hiveTiltDegrees;
         correctedVision = toPinpointFrame(result.chassisPose);
         if (!isWithinField(correctedVision)) {
+            tilt = Double.NaN;
+            clearHiveMotion();
             lastTilt = Double.NaN;
             resetRelocalization();
             reject("Corrected vision pose outside field bounds");
             return;
         }
+        tilt = result.hiveTiltDegrees;
+        updateHiveMotion(capture, frame.pipeline);
         if (frame.pipeline != lastPipeline || !Double.isFinite(lastTilt)
                 || capture - lastFrameTime > VisionLocalizationConstants.MAX_FRAME_GAP_SECONDS
                 || Math.abs(tilt - lastTilt) > VisionLocalizationConstants.MAX_TILT_STEP_DEGREES) {
@@ -252,6 +272,51 @@ public final class VisionLocalization extends SubsystemBase {
                 && pose.getY() >= -margin && pose.getY() <= max;
     }
 
+    private void clearHiveMotion() {
+        motionWindowStart = Double.NaN;
+        stableHiveSide = 0;
+        hiveMotionState = HiveMotionState.UNKNOWN;
+    }
+
+    private void updateHiveMotion(double capture, int pipeline) {
+        if (pipeline != lastPipeline || capture - lastFrameTime
+                > VisionLocalizationConstants.MAX_FRAME_GAP_SECONDS) {
+            clearHiveMotion();
+        }
+        if (capture <= lastFrameTime) {
+            clearHiveMotion();
+            return;
+        }
+        if (Double.isNaN(motionWindowStart)) {
+            startHiveMotionWindow(capture);
+            return;
+        }
+
+        motionWindowMin = Math.min(motionWindowMin, tilt);
+        motionWindowMax = Math.max(motionWindowMax, tilt);
+        if (capture - motionWindowStart < HIVE_MOTION_WINDOW_SECONDS) {
+            return;
+        }
+
+        double change = tilt - motionWindowTilt;
+        if (motionWindowMax - motionWindowMin <= HIVE_STILL_CHANGE_DEGREES) {
+            hiveMotionState = HiveMotionState.STILL;
+            stableHiveSide = Math.abs(tilt) >= HIVE_MIN_SIDE_DEGREES ? Math.signum(tilt) : 0;
+        } else if (change * stableHiveSide <= -HIVE_MOTION_CHANGE_DEGREES) {
+            hiveMotionState = HiveMotionState.TILTING_TO_OTHER_SIDE;
+        } else {
+            hiveMotionState = HiveMotionState.UNKNOWN;
+        }
+        startHiveMotionWindow(capture);
+    }
+
+    private void startHiveMotionWindow(double capture) {
+        motionWindowStart = capture;
+        motionWindowTilt = tilt;
+        motionWindowMin = tilt;
+        motionWindowMax = tilt;
+    }
+
     private void reject(String reason) {
         status = reason;
         rejected++;
@@ -265,7 +330,15 @@ public final class VisionLocalization extends SubsystemBase {
     public Pose2d getEstimatedPosition() { return ekf.getEstimatedPosition(); }
     public Pose2d getWpiPosition() { return wpi.getEstimatedPosition(); }
     public Pose2d getCorrectedVision() { return correctedVision; }
-    public double getHiveTiltDegrees() { return tilt; }
+    /** Latest valid tilt, in degrees, or NaN when the observation is stale. */
+    public double getHiveTiltDegrees() {
+        return lastUpdateTime - lastFrameTime
+                <= VisionLocalizationConstants.MAX_FRAME_GAP_SECONDS ? tilt : Double.NaN;
+    }
+
+    public HiveMotionState getHiveMotionState() {
+        return Double.isFinite(getHiveTiltDegrees()) ? hiveMotionState : HiveMotionState.UNKNOWN;
+    }
     public double getLastVisionAgeSeconds() { return lastUpdateTime - lastAcceptedTime; }
     public String getStatus() { return status; }
     public int getAcceptedCount() { return accepted; }
