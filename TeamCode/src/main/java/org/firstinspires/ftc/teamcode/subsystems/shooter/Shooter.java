@@ -45,7 +45,7 @@ public final class Shooter extends SubsystemBase {
         double dt = Math.max(now - lastTime, ShooterConstants.MIN_CONTROL_DT_SECONDS);
         lastTime = now;
 
-        double rawRpm = -encoderMotor.getVelocity() * 60.0 / ShooterConstants.TICKS_PER_REVOLUTION;
+        double rawRpm = encoderMotor.getVelocity() * 60.0 / ShooterConstants.TICKS_PER_REVOLUTION;
         filteredRpm += ShooterConstants.FILTER_ALPHA * (rawRpm - filteredRpm);
         double error = targetRpm - filteredRpm;
         double derivative = (error - lastError) / dt;

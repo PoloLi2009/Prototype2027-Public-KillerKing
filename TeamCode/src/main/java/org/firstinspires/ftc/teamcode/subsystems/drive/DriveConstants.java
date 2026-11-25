@@ -14,11 +14,12 @@ public final class DriveConstants {
 
     public static final DcMotor.RunMode MOTOR_RUN_MODE = DcMotor.RunMode.RUN_WITHOUT_ENCODER;
     public static final DcMotor.ZeroPowerBehavior ZERO_POWER_BEHAVIOR = DcMotor.ZeroPowerBehavior.BRAKE;
-    public static final DcMotor.Direction MOTOR_DIRECTION = DcMotor.Direction.REVERSE;
+    public static final DcMotor.Direction LEFT_MOTOR_DIRECTION = DcMotor.Direction.FORWARD;
+    public static final DcMotor.Direction RIGHT_MOTOR_DIRECTION = DcMotor.Direction.REVERSE;
     public static final RevHubOrientationOnRobot.LogoFacingDirection IMU_LOGO_DIRECTION =
             RevHubOrientationOnRobot.LogoFacingDirection.RIGHT;
     public static final RevHubOrientationOnRobot.UsbFacingDirection IMU_USB_DIRECTION =
-            RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+            RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
 
     public static final double JOYSTICK_DEADZONE = 0.05;
 }

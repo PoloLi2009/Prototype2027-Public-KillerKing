@@ -19,20 +19,20 @@ Killer King 的 Driver Station 手动程序为蓝方 `Ba` 和红方 `Ba Red`（T
 
 按下 Driver Station 的 Start 后，飞轮目标为 3375 RPM，吸球、送料和反转初始功率为 1.0。电机优先级依次为 RT、LT、LB。LT 按下时优先关闭球挡。松开按键后，球挡保持上一次位置。
 
-Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。蓝方自瞄目标的 X 为 84 in，红方以场地中线镜像为 60 in。机器人 Y < 72 in 时选目标 Y = 58 in，其余位置选 Y = 96 in。云台中位朝向车尾，偏转范围为 ±135°。定位无有效位姿时，自瞄保持当前舵机位置。
+Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。蓝方自瞄目标的 X 为 84 in，红方以场地中线镜像为 60 in。机器人 Y < 72 in 时选目标 Y = 60 in，其余位置选 Y = 84 in。云台中位朝车右（逆时针为正时记为 -90°），偏转范围为 ±175°，对应舵机 0.0 至 1.0。定位无有效位姿时，自瞄保持当前舵机位置。
 
 ## 硬件配置
 
 | 配置名 | 机构 |
 | --- | --- |
-| `0` / `1` / `2` / `3` | 左前 / 左后 / 右前 / 右后底盘电机，四个均反向 |
-| `00` / `01` | 带编码器的飞轮电机（反向） / 另一侧飞轮电机 |
+| `0` / `1` / `2` / `3` | 左前 / 左后 / 右前 / 右后底盘电机，左侧正向、右侧反向 |
+| `00` / `01` | 带编码器的飞轮电机（FORWARD，直接读取编码器速度） / 另一侧飞轮电机 |
 | `03` / `02` | Intake 电机 / 通道电机（反向） |
-| `s0` / `s00` | Intake 抬升舵机，镜像控制 |
+| `s0` / `s00` | Intake 抬升舵机，初始位置 0.45 / 0.55，镜像控制 |
 | `s2` / `s01` | 云台舵机，同向控制 |
 | `s1` | 球挡舵机，关闭 0.55，打开 0.80 |
-| `imu` | Hub Logo 朝右，USB 口朝前 |
-| `od` | goBILDA Pinpoint，偏移 (-48, -125) mm，双编码器方向均为 FORWARD |
+| `imu` | Hub Logo 朝右，USB 口朝后 |
+| `od` | goBILDA Pinpoint，偏移 (-48, -125) mm，双编码器方向均为 REVERSED |
 | `limelight` | 可选 Limelight 3A，供 HIVE AprilTag 定位 |
 
 ## Limelight 视觉定位
@@ -44,7 +44,7 @@ Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。蓝方�
 | `BIOBUZZ_HiveFlat_Blue.fmap` | 0 | `Vision Fusion Command Test - Blue` | `Ba` |
 | `BIOBUZZ_HiveFlat_Red.fmap` | 1 | `Vision Fusion Command Test - Red` | `Ba Red` |
 
-两张地图都在 `TeamCode/src/main/assets/vision/`。按 Killer King 实车测量值填写相机的 Forward、Right、Up 和 Roll、Pitch、Yaw。使用云台转轴在地面的投影为参考原点，云台舵机在 0.5 时，参考系 +X 朝车头。
+两张地图都在 `TeamCode/src/main/assets/vision/`。按 Killer King 实车测量值填写两套 pipeline 的相机 Forward、Right、Up 和 Roll、Pitch、Yaw。以云台转轴在地面的投影为原点。将云台置于 0.5（发射口朝车右）后，按车头作为 +X 标定相机外参。
 
 在 `VisionLocalizationConstants` 填写转轴相对底盘中心的前向和左向偏移，初值均为 0。视觉校正使用曝光时的云台估算角。云台缓慢跟瞄时可以继续融合，转动过快或估算角明显落后指令角时会拒绝该帧。可在 `TurretConstants` 按实车带载行程调整估算速度，初值为 300°/s。
 

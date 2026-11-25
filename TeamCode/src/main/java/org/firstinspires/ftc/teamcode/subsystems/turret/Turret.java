@@ -46,7 +46,7 @@ public final class Turret extends SubsystemBase {
     }
 
     public double getPosition() {
-        // Positive rotation from rear center decreases both servo positions.
+        // Positive rotation from servo center decreases both servo positions.
         return TurretConstants.CENTER_POSITION - offsetDegrees / TurretConstants.SERVO_TRAVEL_DEGREES;
     }
 }

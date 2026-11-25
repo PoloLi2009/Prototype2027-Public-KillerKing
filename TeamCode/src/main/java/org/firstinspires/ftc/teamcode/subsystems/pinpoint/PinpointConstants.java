@@ -13,9 +13,9 @@ public final class PinpointConstants {
     public static final double X_OFFSET_MM = -48.0;
     public static final double Y_OFFSET_MM = -125.0;
     public static final GoBildaPinpointDriver.EncoderDirection X_ENCODER_DIRECTION =
-            GoBildaPinpointDriver.EncoderDirection.FORWARD;
+            GoBildaPinpointDriver.EncoderDirection.REVERSED;
     public static final GoBildaPinpointDriver.EncoderDirection Y_ENCODER_DIRECTION =
-            GoBildaPinpointDriver.EncoderDirection.FORWARD;
+            GoBildaPinpointDriver.EncoderDirection.REVERSED;
 
     public static final double START_X_INCHES = 72;
     public static final double START_Y_INCHES = 72;

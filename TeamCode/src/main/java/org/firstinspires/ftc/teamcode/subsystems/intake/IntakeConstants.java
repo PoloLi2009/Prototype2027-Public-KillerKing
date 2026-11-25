@@ -13,7 +13,7 @@ public final class IntakeConstants {
     public static final DcMotor.ZeroPowerBehavior ZERO_POWER_BEHAVIOR = DcMotor.ZeroPowerBehavior.BRAKE;
     public static final DcMotor.Direction FEED_MOTOR_DIRECTION = DcMotor.Direction.REVERSE;
 
-    public static final double INITIAL_LIFT_POSITION = 0.5;
+    public static final double INITIAL_LIFT_POSITION = 0.45;
     public static final double LIFT_STEP = 0.1;
     public static final double LIFT_MIN = 0.2;
     public static final double LIFT_MAX = 0.8;

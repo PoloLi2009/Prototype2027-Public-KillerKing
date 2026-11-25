@@ -68,7 +68,7 @@ public final class TurretAimCommand extends CommandBase {
             double offset = turret.getOffsetDegrees();
             telemetry.addData("自瞄目标 (in)", "(%.0f, %.0f)", targetX, targetY);
             telemetry.addData("目标相对车头", "%.1f°", relativeTargetDegrees);
-            telemetry.addData("云台相对车尾偏移", "%.1f° (限位 ±%.0f°)",
+            telemetry.addData("云台相对中位偏移", "%.1f° (限位 ±%.0f°)",
                     offset, TurretConstants.MAX_OFFSET_DEGREES);
             telemetry.addData("发射口实际朝向", "%.1f°",
                     wrapDegrees(TurretConstants.CENTER_FACING_DEGREES + offset));

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystems.drive;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -17,10 +18,14 @@ public final class Drive extends SubsystemBase {
     private final IMU imu;
 
     public Drive(HardwareMap hardwareMap) {
-        frontLeft = configureMotor(hardwareMap, DriveConstants.FRONT_LEFT_MOTOR_NAME);
-        backLeft = configureMotor(hardwareMap, DriveConstants.BACK_LEFT_MOTOR_NAME);
-        frontRight = configureMotor(hardwareMap, DriveConstants.FRONT_RIGHT_MOTOR_NAME);
-        backRight = configureMotor(hardwareMap, DriveConstants.BACK_RIGHT_MOTOR_NAME);
+        frontLeft = configureMotor(hardwareMap, DriveConstants.FRONT_LEFT_MOTOR_NAME,
+                DriveConstants.LEFT_MOTOR_DIRECTION);
+        backLeft = configureMotor(hardwareMap, DriveConstants.BACK_LEFT_MOTOR_NAME,
+                DriveConstants.LEFT_MOTOR_DIRECTION);
+        frontRight = configureMotor(hardwareMap, DriveConstants.FRONT_RIGHT_MOTOR_NAME,
+                DriveConstants.RIGHT_MOTOR_DIRECTION);
+        backRight = configureMotor(hardwareMap, DriveConstants.BACK_RIGHT_MOTOR_NAME,
+                DriveConstants.RIGHT_MOTOR_DIRECTION);
 
         imu = hardwareMap.get(IMU.class, DriveConstants.IMU_NAME);
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
@@ -67,11 +72,11 @@ public final class Drive extends SubsystemBase {
         backRight.setPower(br);
     }
 
-    private static DcMotorEx configureMotor(HardwareMap hardwareMap, String name) {
+    private static DcMotorEx configureMotor(HardwareMap hardwareMap, String name, DcMotor.Direction direction) {
         DcMotorEx motor = hardwareMap.get(DcMotorEx.class, name);
         motor.setMode(DriveConstants.MOTOR_RUN_MODE);
         motor.setZeroPowerBehavior(DriveConstants.ZERO_POWER_BEHAVIOR);
-        motor.setDirection(DriveConstants.MOTOR_DIRECTION);
+        motor.setDirection(direction);
         return motor;
     }
 }
