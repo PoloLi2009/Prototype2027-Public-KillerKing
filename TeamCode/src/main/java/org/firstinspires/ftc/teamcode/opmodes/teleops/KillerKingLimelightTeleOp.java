@@ -4,9 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision.Alliance;
 
-@TeleOp(name = "Ba Red", group = "Test")
-public final class KillerKingRedTeleOp extends KillerKingTeleOp {
-    public KillerKingRedTeleOp() {
-        super(Alliance.RED);
+@TeleOp(name = "Blue", group = "Main")
+public final class KillerKingLimelightTeleOp extends KillerKingTeleOp {
+    public KillerKingLimelightTeleOp() {
+        super(Alliance.BLUE, false);
     }
 }

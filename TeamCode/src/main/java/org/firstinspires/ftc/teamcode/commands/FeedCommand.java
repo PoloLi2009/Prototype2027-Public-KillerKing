@@ -40,15 +40,17 @@ public final class FeedCommand extends CommandBase {
         double now = runtime.getAsDouble();
         boolean firing = gamepad.right_trigger > IntakeConstants.TRIGGER_DEADZONE;
         boolean intaking = gamepad.left_trigger > IntakeConstants.TRIGGER_DEADZONE;
+        if (intaking != wasIntaking) {
+            intake.setPickupPosition(intaking);
+        }
         boolean firePressed = firing && !wasFiring;
         if (firePressed) {
             fireStartTime = now;
         }
-        // Intake wins when both triggers request a gate change in the same loop.
-        if (intaking && !wasIntaking) {
-            gate.setOpen(false);
-        } else if (firePressed) {
+        if (firePressed) {
             gate.setOpen(true);
+        } else if (!firing && intaking && (!wasIntaking || wasFiring)) {
+            gate.setOpen(false);
         }
 
         double power = 0;
@@ -83,5 +85,6 @@ public final class FeedCommand extends CommandBase {
     @Override
     public void end(boolean interrupted) {
         intake.stop();
+        intake.setPickupPosition(false);
     }
 }

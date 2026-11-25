@@ -31,6 +31,12 @@ public final class Turret extends SubsystemBase {
         return offsetDegrees;
     }
 
+    public void setPosition(double position) {
+        double offset = (Range.clip(position, 0, 1) - TurretConstants.CENTER_POSITION)
+                * TurretConstants.SERVO_TRAVEL_DEGREES / TurretConstants.SERVO_DIRECTION;
+        setOffsetDegrees(offset);
+    }
+
     public double getEstimatedOffsetDegrees(double nowSeconds) {
         if (Double.isFinite(estimateTimeSeconds)) {
             if (nowSeconds <= estimateTimeSeconds) {
@@ -46,7 +52,7 @@ public final class Turret extends SubsystemBase {
     }
 
     public double getPosition() {
-        // Positive rotation from servo center decreases both servo positions.
-        return TurretConstants.CENTER_POSITION - offsetDegrees / TurretConstants.SERVO_TRAVEL_DEGREES;
+        return TurretConstants.CENTER_POSITION
+                + TurretConstants.SERVO_DIRECTION * offsetDegrees / TurretConstants.SERVO_TRAVEL_DEGREES;
     }
 }

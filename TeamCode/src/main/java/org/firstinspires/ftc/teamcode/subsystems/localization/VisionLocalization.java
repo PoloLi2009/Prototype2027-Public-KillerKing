@@ -7,14 +7,14 @@ import com.arcrobotics.ftclib.geometry.Translation2d;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.teamcode.subsystems.localization.fusion.PinpointEkf;
 import org.firstinspires.ftc.teamcode.subsystems.localization.fusion.PoseHistory;
-import org.firstinspires.ftc.teamcode.subsystems.localization.fusion.WpiPinpointPoseEstimator;
 import org.firstinspires.ftc.teamcode.subsystems.vision.HiveFlatPoseSolver;
 import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision;
+import org.firstinspires.ftc.teamcode.subsystems.vision.VisionConstants;
 
-/** Spinup HIVE correction and delayed pose fusion, in Killer King's field frame. */
+/** Resolves HIVE observations in the shared field frame and confirms odometry corrections. */
 public final class VisionLocalization extends SubsystemBase {
     public enum HiveMotionState {
         STILL, TILTING_TO_OTHER_SIDE, UNKNOWN
@@ -24,12 +24,12 @@ public final class VisionLocalization extends SubsystemBase {
     private static final double HIVE_STILL_CHANGE_DEGREES = 1.0;
     private static final double HIVE_MOTION_CHANGE_DEGREES = 3.0;
     private static final double HIVE_MIN_SIDE_DEGREES = 3.0;
+    private static final Pose2d NO_ODOMETRY_MOTION = new Pose2d();
 
     private final PoseHistory history = new PoseHistory();
-    private final WpiPinpointPoseEstimator wpi = new WpiPinpointPoseEstimator();
-    private final PinpointEkf ekf = new PinpointEkf();
+    private boolean hasOdometryHistory;
     private Pose2d correctedVision;
-    private String status = "Waiting for Pinpoint / vision";
+    private String status = "Waiting for qualifying vision frame";
     private double tilt = Double.NaN;
     private double motionWindowStart = Double.NaN;
     private double motionWindowTilt;
@@ -37,95 +37,97 @@ public final class VisionLocalization extends SubsystemBase {
     private double motionWindowMax;
     private double stableHiveSide;
     private HiveMotionState hiveMotionState = HiveMotionState.UNKNOWN;
-    private double lastTilt = Double.NaN;
-    private double stableSince;
     private double lastFrameTime = Double.NEGATIVE_INFINITY;
-    private double lastAcceptedTime = Double.NaN;
+    private double lastAlignmentTime = Double.NaN;
     private double lastUpdateTime = Double.NaN;
-    private double lastOdometryTime = Double.NaN;
-    private double turretReadyTime;
-    private double earliestCaptureTime = Double.NEGATIVE_INFINITY;
-    private boolean pinpointMissing;
-    private Pose2d relocalizationPose;
-    private PoseHistory.Sample relocalizationSample;
-    private int relocalizationFrames;
+    private double turretReadyTime = Double.NaN;
+    private double lastPositionErrorMeters = Double.NaN;
+    private PoseHistory.Sample alignmentStart;
+    private Translation2d alignmentStartOffset;
+    private int alignmentFrames;
     private int lastPipeline = -1;
     private int accepted;
     private int rejected;
 
-    private void clear() {
-        history.clear();
-        wpi.reset();
-        ekf.reset();
-        correctedVision = null;
-        tilt = Double.NaN;
-        clearHiveMotion();
-        lastTilt = Double.NaN;
-        lastOdometryTime = Double.NaN;
-        lastAcceptedTime = Double.NaN;
-        lastFrameTime = Double.NEGATIVE_INFINITY;
-        lastPipeline = -1;
-        resetRelocalization();
+    /** Returns the confirmed translation from raw Pinpoint coordinates to field coordinates. */
+    public Translation2d update(double now, Pose2d odometry, Pose2D currentFieldPose, double turretClockwiseDegrees,
+                         double turretTrackingErrorDegrees, LimelightVision.Frame frame) {
+        lastUpdateTime = now;
+        boolean hasOdometry = odometry != null && currentFieldPose != null;
+        if (hasOdometry != hasOdometryHistory) {
+            history.clear();
+            resetAlignmentConfirmation();
+            hasOdometryHistory = hasOdometry;
+        }
+        // Without Pinpoint, keep real turret samples for the independent visual estimate.
+        recordSample(now, hasOdometry ? odometry : NO_ODOMETRY_MOTION,
+                turretClockwiseDegrees, turretTrackingErrorDegrees);
+        PoseHistory.Sample past = readObservation(frame, hasOdometry);
+        if (!hasOdometry || past == null) {
+            return null;
+        }
+
+        // Compare positions at exposure so motion during camera latency does not become a correction.
+        Translation2d offset = correctedVision.getTranslation().minus(past.odometry.getTranslation());
+        Translation2d currentOffset = new Translation2d(currentFieldPose.getX(DistanceUnit.METER),
+                currentFieldPose.getY(DistanceUnit.METER)).minus(odometry.getTranslation());
+        lastPositionErrorMeters = offset.getDistance(currentOffset);
+        if (lastPositionErrorMeters < VisionLocalizationConstants.MIN_ALIGNMENT_POSITION_ERROR_METERS) {
+            resetAlignmentConfirmation();
+            status = "Pinpoint within vision threshold";
+            return null;
+        }
+        if (!confirmedAlignment(past, offset)) {
+            status = "Confirming vision discrepancy";
+            return null;
+        }
+
+        resetAlignmentConfirmation();
+        lastAlignmentTime = past.time;
+        accepted++;
+        status = "Pinpoint X/Y aligned to Limelight";
+        return offset;
     }
 
-    /** A null odometry sample pauses vision updates and preserves the estimator during brief gaps. */
-    public void update(double now, Pose2d odometry, double turretClockwiseDegrees,
-                       double turretTrackingErrorDegrees, LimelightVision.Frame frame) {
-        lastUpdateTime = now;
-        if (odometry == null) {
-            pinpointMissing = true;
-            if (Double.isFinite(lastOdometryTime)
-                    && now - lastOdometryTime > VisionLocalizationConstants.PINPOINT_DROPOUT_GRACE_SECONDS) {
-                clear();
-            }
-            status = Double.isFinite(lastOdometryTime)
-                    ? "Pinpoint gap; holding fusion" : "Waiting for Pinpoint";
-            return;
-        }
-
-        if (pinpointMissing && now - lastOdometryTime > VisionLocalizationConstants.PINPOINT_DROPOUT_GRACE_SECONDS) {
-            clear();
-        }
-        if (!Double.isFinite(lastOdometryTime)) {
+    private void recordSample(double now, Pose2d odometry, double turretClockwiseDegrees,
+                              double turretTrackingErrorDegrees) {
+        if (!Double.isFinite(turretReadyTime)) {
             turretReadyTime = now + VisionLocalizationConstants.TURRET_INITIAL_SETTLE_SECONDS;
-            status = "Waiting for qualifying vision frame";
         }
-        if (pinpointMissing) {
-            // Avoid interpolating a camera observation across missing odometry samples.
-            earliestCaptureTime = now;
-            pinpointMissing = false;
-            resetRelocalization();
-        }
-        lastOdometryTime = now;
         history.add(now, odometry, turretClockwiseDegrees, turretTrackingErrorDegrees);
-        wpi.updateWithTime(now, odometry);
-        ekf.updateWithTime(now, odometry);
+    }
 
+    /** Validates a new frame and stores its field pose at the time of exposure. */
+    private PoseHistory.Sample readObservation(LimelightVision.Frame frame, boolean usePinpointHeadingForPivot) {
         if (frame == null) {
-            return;
+            return null;
         }
 
         double capture = frame.approximateCaptureNanos / 1e9;
+        if (capture <= lastFrameTime) {
+            reject("Vision frame out of order");
+            return null;
+        }
         PoseHistory.Sample past = history.sample(capture);
-        if (past == null || capture < earliestCaptureTime) {
-            reject("Capture outside Pinpoint history");
-            return;
+        if (past == null) {
+            reject("Capture outside pose history");
+            return null;
         }
         if (capture < turretReadyTime) {
             reject("Waiting for initial turret center");
-            return;
+            return null;
         }
         PoseHistory.Sample earlier = history.sample(capture - VisionLocalizationConstants.TURRET_SAMPLE_SECONDS);
         if (earlier == null) {
             reject("Waiting for turret angle history");
-            return;
+            return null;
         }
         double turretSpeed = Math.abs(past.turretDegrees - earlier.turretDegrees)
                 / VisionLocalizationConstants.TURRET_SAMPLE_SECONDS;
         if (turretSpeed > VisionLocalizationConstants.maxTurretSpeedDegreesPerSecond
                 || past.turretTrackingErrorDegrees > VisionLocalizationConstants.MAX_TURRET_TRACKING_ERROR_DEGREES) {
             reject("Turret motion too fast at exposure");
-            return;
+            return null;
         }
 
         Position position = frame.rawPose.getPosition().toUnit(DistanceUnit.METER);
@@ -134,127 +136,52 @@ public final class VisionLocalization extends SubsystemBase {
                 frame.rawPose.getOrientation().getPitch(AngleUnit.RADIANS),
                 frame.rawPose.getOrientation().getRoll(AngleUnit.RADIANS), past.turretDegrees);
         if (result == null) {
-            correctedVision = null;
             tilt = Double.NaN;
             clearHiveMotion();
-            lastTilt = Double.NaN;
             reject("HIVE geometry / floor / level mismatch");
-            return;
+            return null;
         }
 
-        correctedVision = toPinpointFrame(result.chassisPose);
-        if (!isWithinField(correctedVision)) {
+        Pose2d fieldPoseAtCapture = toPinpointFrame(result.chassisPose,
+                usePinpointHeadingForPivot ? past.odometry.getRotation() : null);
+        if (!isWithinField(fieldPoseAtCapture)) {
             tilt = Double.NaN;
             clearHiveMotion();
-            lastTilt = Double.NaN;
-            resetRelocalization();
             reject("Corrected vision pose outside field bounds");
-            return;
+            return null;
         }
+        correctedVision = fieldPoseAtCapture;
         tilt = result.hiveTiltDegrees;
         updateHiveMotion(capture, frame.pipeline);
-        if (frame.pipeline != lastPipeline || !Double.isFinite(lastTilt)
-                || capture - lastFrameTime > VisionLocalizationConstants.MAX_FRAME_GAP_SECONDS
-                || Math.abs(tilt - lastTilt) > VisionLocalizationConstants.MAX_TILT_STEP_DEGREES) {
-            stableSince = capture;
-            resetRelocalization();
+        if (frame.pipeline != lastPipeline
+                || capture - lastFrameTime > VisionLocalizationConstants.MAX_FRAME_GAP_SECONDS) {
+            resetAlignmentConfirmation();
         }
         lastPipeline = frame.pipeline;
-        lastTilt = tilt;
         lastFrameTime = capture;
-        if (capture - stableSince < VisionLocalizationConstants.HIVE_STABLE_SECONDS) {
-            reject("Waiting for stable HIVE tilt");
-            return;
-        }
+        return past;
+    }
 
-        double distance = frame.averageDistanceMeters;
-        double xyStd = VisionLocalizationConstants.minimumVisionXyStdMeters
-                + VisionLocalizationConstants.visionDistanceNoiseCoefficient * distance * distance
-                / Math.sqrt(frame.tagCount);
-        double headingStd = Math.toRadians(Math.hypot(VisionLocalizationConstants.visionHeadingStdDegrees,
-                turretSpeed * VisionLocalizationConstants.TURRET_TIMING_UNCERTAINTY_SECONDS));
-        if (!Double.isFinite(xyStd) || !Double.isFinite(headingStd)) {
-            reject("Invalid measurement noise");
-            return;
-        }
-
-        // Require agreement with raw odometry before the first calibration of this OpMode.
-        if (!ekf.isSeeded() && (correctedVision.getTranslation().getDistance(past.odometry.getTranslation())
-                > VisionLocalizationConstants.MAX_SEED_DIFFERENCE_METERS
-                || Math.abs(correctedVision.getRotation().minus(past.odometry.getRotation()).getDegrees())
-                > VisionLocalizationConstants.MAX_SEED_HEADING_ERROR_DEGREES)) {
-            if (accepted == 0) {
-                reject("Vision and Pinpoint disagree at initialization");
-            } else {
-                relocalize(past, xyStd, headingStd);
-            }
-            return;
-        }
-
-        boolean ekfAccepted = ekf.addVisionMeasurement(correctedVision, capture, xyStd,
-                headingStd, past.odometry);
-        if (!ekfAccepted && ekf.isSeeded() && !hasUsableVisionForAim()) {
-            relocalize(past, xyStd, headingStd);
-            return;
-        }
-
-        boolean wpiAccepted = wpi.addVisionMeasurement(correctedVision, capture, xyStd, headingStd);
-        String resultStatus = "WPI " + (wpiAccepted ? "accepted" : "rejected") + " / EKF " + ekf.getStatus();
-        if (ekfAccepted) {
-            accept(capture, resultStatus);
+    private boolean confirmedAlignment(PoseHistory.Sample sample, Translation2d offset) {
+        if (alignmentStart == null || alignmentStartOffset.getDistance(offset)
+                > VisionLocalizationConstants.ALIGNMENT_POSITION_TOLERANCE_METERS) {
+            alignmentStart = sample;
+            alignmentStartOffset = offset;
+            alignmentFrames = 1;
         } else {
-            reject(resultStatus);
+            alignmentFrames++;
         }
+        return alignmentFrames >= VisionLocalizationConstants.MIN_ALIGNMENT_FRAMES
+                && sample.time - alignmentStart.time >= VisionLocalizationConstants.ALIGNMENT_CONFIRMATION_SECONDS;
     }
 
-    private void relocalize(PoseHistory.Sample sample, double xyStd, double headingStd) {
-        if (confirmRelocalization(sample) && ekf.reseedFromVision(correctedVision, sample.time,
-                xyStd, headingStd, sample.odometry)) {
-            wpi.reseedFromVision(correctedVision, sample.time);
-            accept(sample.time, "EKF relocalized");
-        } else {
-            reject("Relocalizing: " + relocalizationFrames + " / "
-                    + VisionLocalizationConstants.RELOCALIZATION_FRAME_COUNT + " matching frames");
-        }
+    private void resetAlignmentConfirmation() {
+        alignmentStart = null;
+        alignmentStartOffset = null;
+        alignmentFrames = 0;
     }
 
-    private boolean confirmRelocalization(PoseHistory.Sample sample) {
-        if (relocalizationSample != null && sample.time <= relocalizationSample.time) {
-            return false;
-        }
-        if (relocalizationSample == null
-                || sample.time - relocalizationSample.time > VisionLocalizationConstants.MAX_FRAME_GAP_SECONDS) {
-            relocalizationFrames = 0;
-        } else {
-            // Compare observations at the same time using intervening Pinpoint motion.
-            Pose2d predicted = relocalizationPose.plus(sample.odometry.minus(relocalizationSample.odometry));
-            double positionError = predicted.getTranslation().getDistance(correctedVision.getTranslation());
-            double headingError = Math.abs(predicted.getRotation().minus(correctedVision.getRotation()).getDegrees());
-            if (positionError > VisionLocalizationConstants.RELOCALIZATION_POSITION_TOLERANCE_METERS
-                    || headingError > VisionLocalizationConstants.RELOCALIZATION_HEADING_TOLERANCE_DEGREES) {
-                relocalizationFrames = 0;
-            }
-        }
-        relocalizationPose = correctedVision;
-        relocalizationSample = sample;
-        relocalizationFrames++;
-        return relocalizationFrames >= VisionLocalizationConstants.RELOCALIZATION_FRAME_COUNT;
-    }
-
-    private void resetRelocalization() {
-        relocalizationSample = null;
-        relocalizationPose = null;
-        relocalizationFrames = 0;
-    }
-
-    private void accept(double capture, String reason) {
-        accepted++;
-        lastAcceptedTime = capture;
-        status = reason;
-        resetRelocalization();
-    }
-
-    private static Pose2d toPinpointFrame(Pose2d mapPose) {
+    private static Pose2d toPinpointFrame(Pose2d mapPose, Rotation2d pinpointHeading) {
         Rotation2d axes = Rotation2d.fromDegrees(VisionLocalizationConstants.MAP_TO_PINPOINT_YAW_DEGREES);
         double center = DistanceUnit.INCH.toMeters(VisionLocalizationConstants.FIELD_CENTER_INCHES);
         Rotation2d heading = mapPose.getRotation().plus(axes);
@@ -262,7 +189,7 @@ public final class VisionLocalization extends SubsystemBase {
                 .plus(new Translation2d(center, center));
         Translation2d pivotOffset = new Translation2d(VisionLocalizationConstants.TURRET_PIVOT_FORWARD_METERS,
                 VisionLocalizationConstants.TURRET_PIVOT_LEFT_METERS);
-        return new Pose2d(position.minus(pivotOffset.rotateBy(heading)), heading);
+        return new Pose2d(position.minus(pivotOffset.rotateBy(pinpointHeading != null ? pinpointHeading : heading)), heading);
     }
 
     private static boolean isWithinField(Pose2d pose) {
@@ -282,10 +209,6 @@ public final class VisionLocalization extends SubsystemBase {
         if (pipeline != lastPipeline || capture - lastFrameTime
                 > VisionLocalizationConstants.MAX_FRAME_GAP_SECONDS) {
             clearHiveMotion();
-        }
-        if (capture <= lastFrameTime) {
-            clearHiveMotion();
-            return;
         }
         if (Double.isNaN(motionWindowStart)) {
             startHiveMotionWindow(capture);
@@ -318,18 +241,16 @@ public final class VisionLocalization extends SubsystemBase {
     }
 
     private void reject(String reason) {
+        resetAlignmentConfirmation();
         status = reason;
         rejected++;
     }
 
-    public boolean hasFieldPose() { return ekf.isSeeded(); }
-    public boolean hasUsableVisionForAim() {
-        return ekf.isSeeded() && !pinpointMissing
-                && getLastVisionAgeSeconds() <= VisionLocalizationConstants.MAX_VISION_AGE_FOR_AIM_SECONDS;
-    }
-    public Pose2d getEstimatedPosition() { return ekf.getEstimatedPosition(); }
-    public Pose2d getWpiPosition() { return wpi.getEstimatedPosition(); }
     public Pose2d getCorrectedVision() { return correctedVision; }
+    public Pose2d getFreshVisionPose() {
+        return getVisionAgeSeconds() * 1000.0 <= VisionConstants.maxFrameAgeMs ? correctedVision : null;
+    }
+    public double getVisionAgeSeconds() { return lastUpdateTime - lastFrameTime; }
     /** Latest valid tilt, in degrees, or NaN when the observation is stale. */
     public double getHiveTiltDegrees() {
         return lastUpdateTime - lastFrameTime
@@ -339,7 +260,9 @@ public final class VisionLocalization extends SubsystemBase {
     public HiveMotionState getHiveMotionState() {
         return Double.isFinite(getHiveTiltDegrees()) ? hiveMotionState : HiveMotionState.UNKNOWN;
     }
-    public double getLastVisionAgeSeconds() { return lastUpdateTime - lastAcceptedTime; }
+    public double getLastAlignmentAgeSeconds() { return lastUpdateTime - lastAlignmentTime; }
+    public double getLastPositionErrorMeters() { return lastPositionErrorMeters; }
+    public int getAlignmentFrames() { return alignmentFrames; }
     public String getStatus() { return status; }
     public int getAcceptedCount() { return accepted; }
     public int getRejectedCount() { return rejected; }

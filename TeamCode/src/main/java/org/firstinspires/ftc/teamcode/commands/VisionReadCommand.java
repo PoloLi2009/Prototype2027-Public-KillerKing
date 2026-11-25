@@ -2,14 +2,13 @@ package org.firstinspires.ftc.teamcode.commands;
 
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.geometry.Pose2d;
-import com.arcrobotics.ftclib.geometry.Rotation2d;
+import com.arcrobotics.ftclib.geometry.Translation2d;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.subsystems.localization.VisionLocalization;
-import org.firstinspires.ftc.teamcode.subsystems.localization.VisionLocalizationConstants;
 import org.firstinspires.ftc.teamcode.subsystems.pinpoint.Pinpoint;
 import org.firstinspires.ftc.teamcode.subsystems.turret.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.vision.LimelightVision;
@@ -20,7 +19,6 @@ public final class VisionReadCommand extends CommandBase {
     private final Pinpoint pinpoint;
     private final Turret turret;
     private final VisionLocalization localization;
-    private boolean visionForAimEnabled;
     private double estimatedTurretOffset;
 
     public VisionReadCommand(LimelightVision vision, Pinpoint pinpoint, Turret turret,
@@ -29,53 +27,60 @@ public final class VisionReadCommand extends CommandBase {
         this.pinpoint = pinpoint;
         this.turret = turret;
         this.localization = localization;
-        addRequirements(vision, localization);
+        addRequirements(vision, localization, pinpoint);
     }
 
     @Override
     public void execute() {
         double now = System.nanoTime() / 1e9;
-        Pose2D pose = pinpoint.getPose();
-        // With the turret centered, the web configuration uses chassis forward as zero.
+        // The vision heading estimate assumes the web yaw is calibrated with the turret centered.
         // The turret estimate is CCW; the Spinup solver expects CW.
         estimatedTurretOffset = turret.getEstimatedOffsetDegrees(now);
-        Pose2d odometry = pose == null ? null : new Pose2d(
-                pose.getX(DistanceUnit.METER), pose.getY(DistanceUnit.METER),
-                new Rotation2d(pose.getHeading(AngleUnit.RADIANS)));
-        localization.update(now, odometry, -estimatedTurretOffset,
-                Math.abs(turret.getOffsetDegrees() - estimatedTurretOffset), vision.getNewFrame());
-    }
-
-    public void toggleVisionForAim() {
-        visionForAimEnabled = !visionForAimEnabled;
+        double trackingError = Math.abs(turret.getOffsetDegrees() - estimatedTurretOffset);
+        LimelightVision.Frame frame = vision.getNewFrame();
+        Translation2d offset = localization.update(now, pinpoint.getRawOdometry(), pinpoint.getPose(),
+                -estimatedTurretOffset, trackingError, frame);
+        if (offset != null) {
+            pinpoint.setFieldOffset(offset);
+        }
     }
 
     public Pose2D getAimPose() {
-        if (usesFusedPose()) {
-            Pose2d fused = localization.getEstimatedPosition();
-            return new Pose2D(DistanceUnit.METER, fused.getX(), fused.getY(),
-                    AngleUnit.RADIANS, fused.getRotation().getRadians());
+        Pose2D pinpointPose = pinpoint.getPose();
+        if (pinpointPose != null) {
+            return pinpointPose;
         }
-        return pinpoint.getPose();
-    }
-
-    private boolean usesFusedPose() {
-        return visionForAimEnabled && localization.hasUsableVisionForAim() && pinpoint.getPose() != null;
+        Pose2d fieldPose = localization.getFreshVisionPose();
+        return fieldPose == null ? null : new Pose2D(DistanceUnit.METER,
+                fieldPose.getX(), fieldPose.getY(), AngleUnit.RADIANS, fieldPose.getRotation().getRadians());
     }
 
     public void addTelemetry(Telemetry telemetry) {
+        pinpoint.addTelemetry(telemetry);
+        if (pinpoint.getRawOdometry() != null) {
+            addPoseTelemetry(telemetry, "Pinpoint raw X/Y/Heading", pinpoint.getRawOdometry());
+        }
         telemetry.addData("Limelight", "%s / P%d / %s", vision.isBlueAlliance() ? "Blue" : "Red",
                 vision.getExpectedPipeline(), vision.getStatus());
-        telemetry.addData("Vision fusion", "%s (%d accepted / %d rejected)", localization.getStatus(),
-                localization.getAcceptedCount(), localization.getRejectedCount());
+        telemetry.addData("Vision localization", localization.getStatus());
         telemetry.addData("Aim pose source", getAimPoseStatus());
         telemetry.addData("Camera turret estimate / command", "%.1f° / %.1f°",
                 estimatedTurretOffset, turret.getOffsetDegrees());
-        addPoseTelemetry(telemetry, "Limelight corrected (last)", localization.getCorrectedVision());
-        if (localization.hasFieldPose()) {
-            addPoseTelemetry(telemetry, "Pinpoint EKF", localization.getEstimatedPosition());
-            addPoseTelemetry(telemetry, "WPILib comparison", localization.getWpiPosition());
-            telemetry.addData("Last accepted vision", "%.2f s", localization.getLastVisionAgeSeconds());
+        String visionPoseLabel = "Limelight field X/Y/Heading";
+        Pose2d correctedVision = localization.getCorrectedVision();
+        if (correctedVision != null) {
+            addPoseTelemetry(telemetry, visionPoseLabel, correctedVision);
+            telemetry.addData("Limelight frame age", "%.0f ms", localization.getVisionAgeSeconds() * 1000.0);
+        } else {
+            telemetry.addData(visionPoseLabel, "Waiting for pose");
+        }
+        if (Double.isFinite(localization.getLastPositionErrorMeters())) {
+            telemetry.addData("Last vision discrepancy", "%.1f in / %d confirming frames",
+                    DistanceUnit.INCH.fromMeters(localization.getLastPositionErrorMeters()),
+                    localization.getAlignmentFrames());
+        }
+        if (localization.getAcceptedCount() > 0) {
+            telemetry.addData("Last Pinpoint alignment", "%.2f s ago", localization.getLastAlignmentAgeSeconds());
         }
         if (Double.isFinite(localization.getHiveTiltDegrees())) {
             telemetry.addData("HIVE tilt", "%.1f°", localization.getHiveTiltDegrees());
@@ -83,20 +88,19 @@ public final class VisionReadCommand extends CommandBase {
     }
 
     private String getAimPoseStatus() {
-        if (pinpoint.getPose() == null) return "Holding (waiting for Pinpoint)";
-        if (!visionForAimEnabled) return "Pinpoint (vision preview)";
-        if (usesFusedPose()) {
-            return localization.getLastVisionAgeSeconds() > VisionLocalizationConstants.VISION_COAST_AFTER_SECONDS
-                    ? "EKF (odometry only)" : "EKF (vision recent)";
+        if (pinpoint.getPose() == null) {
+            if (localization.getFreshVisionPose() != null) {
+                return "Limelight only (Pinpoint unavailable)";
+            }
+            return "Holding (waiting for pose)";
         }
-        return localization.hasFieldPose() ? "Pinpoint (vision expired)" : "Pinpoint (waiting for EKF)";
+        return localization.getAcceptedCount() == 0
+                ? "Pinpoint (preset start)" : "Pinpoint (vision X/Y, Pinpoint heading)";
     }
 
     private static void addPoseTelemetry(Telemetry telemetry, String label, Pose2d pose) {
-        if (pose != null) {
-            telemetry.addData(label, "%.1f / %.1f in / %.1f°",
-                    DistanceUnit.INCH.fromMeters(pose.getX()), DistanceUnit.INCH.fromMeters(pose.getY()),
-                    pose.getRotation().getDegrees());
-        }
+        telemetry.addData(label, "%.1f / %.1f in / %.1f°",
+                DistanceUnit.INCH.fromMeters(pose.getX()), DistanceUnit.INCH.fromMeters(pose.getY()),
+                pose.getRotation().getDegrees());
     }
 }
