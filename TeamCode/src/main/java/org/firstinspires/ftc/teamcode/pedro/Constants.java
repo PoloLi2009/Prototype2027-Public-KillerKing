@@ -2,15 +2,21 @@ package org.firstinspires.ftc.teamcode.pedro;
 
 import com.pedropathing.algorithm.Foresight;
 import com.pedropathing.algorithm.ForesightConfig;
+import com.pedropathing.controllers.Controller;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.math.Matrix;
+import com.pedropathing.math.Vector2D;
 import com.pedropathing.revhub.drivetrains.Mecanum;
 import com.pedropathing.revhub.drivetrains.MecanumConfig;
 import com.pedropathing.revhub.localizers.PinpointConfig;
 import com.pedropathing.revhub.localizers.PinpointLocalizer;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
+import java.util.OptionalDouble;
 import org.firstinspires.ftc.teamcode.subsystems.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.subsystems.pinpoint.PinpointConstants;
 
@@ -21,11 +27,11 @@ public class Constants {
         c.backLeftName.set(DriveConstants.BACK_LEFT_MOTOR_NAME);
         c.frontRightName.set(DriveConstants.FRONT_RIGHT_MOTOR_NAME);
         c.backRightName.set(DriveConstants.BACK_RIGHT_MOTOR_NAME);
-        // Killer King runs all four drive motors REVERSE (see DriveConstants / README).
-        c.frontLeftDirection.set(DriveConstants.MOTOR_DIRECTION);
-        c.backLeftDirection.set(DriveConstants.MOTOR_DIRECTION);
-        c.frontRightDirection.set(DriveConstants.MOTOR_DIRECTION);
-        c.backRightDirection.set(DriveConstants.MOTOR_DIRECTION);
+        // Same directions as the TeleOp Drive subsystem (left FORWARD, right REVERSE).
+        c.frontLeftDirection.set(DriveConstants.LEFT_MOTOR_DIRECTION);
+        c.backLeftDirection.set(DriveConstants.LEFT_MOTOR_DIRECTION);
+        c.frontRightDirection.set(DriveConstants.RIGHT_MOTOR_DIRECTION);
+        c.backRightDirection.set(DriveConstants.RIGHT_MOTOR_DIRECTION);
         c.manualBrakeMode.set(true);
     });
 

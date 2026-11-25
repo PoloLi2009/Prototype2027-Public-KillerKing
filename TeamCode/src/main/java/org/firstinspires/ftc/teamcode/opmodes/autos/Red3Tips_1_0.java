@@ -7,24 +7,32 @@ import com.pedropathing.paths.Path;
 
 /**
  * Pedro Visualizer route for Red3Tips1.0 (Killer King, intake = robot front, Pedro field inches,
- * headings in degrees at construction). Kept as exported so a new export can replace it; only
- * the class name changed, because a class named {@code Paths} clashes with the Pedro import.
- * Autonomous-only heading changes live in {@link Red3TipsAuto}.
+ * headings in degrees at construction). Same layout as the Visualizer export (class renamed because
+ * {@code Paths} clashes with the Pedro import). Autonomous-only heading changes live in
+ * {@link Red3TipsAuto}.
+ *
+ * <p>Adjusted for the measured robot size, 479.5 x 348.2 mm (18.88 x 13.71 in, center = middle of
+ * that footprint): the start, Garden, Far flower and Side flower points put the front edge exactly on
+ * the wall ({@link #HALF_LENGTH_IN} from it), and the Park curve's second control point keeps the
+ * robot off the wall while it turns. Re-apply these if the route is re-exported.
  */
 public final class Red3Tips_1_0 {
+    public static final double FIELD_SIZE_IN = 141.5;
+    public static final double HALF_LENGTH_IN = 479.5 / 2.0 / 25.4;   // 9.439 in
+
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    public final Pose start = poseFactory.of(54.3656, 8.2201, 270);
-    private final Pose point101Garden = poseFactory.of(7.4252, 7.7709, 270);
+    public final Pose start = poseFactory.of(54.3656, HALF_LENGTH_IN, 270);
+    private final Pose point101Garden = poseFactory.of(7.4252, HALF_LENGTH_IN, 270);
     private final Pose point101GardenControl1 = poseFactory.of(37.7001, 12.3667, 0);
     private final Pose point101GardenControl2 = poseFactory.of(7.6473, 26.5441, 0);
-    private final Pose point202GardenloadfarStart = poseFactory.of(7.4252, 7.7709, 270);
+    private final Pose point202GardenloadfarStart = poseFactory.of(7.4252, HALF_LENGTH_IN, 270);
     private final Pose point202Gardenloadfar = poseFactory.of(39.2847, 109.6207, 70);
     private final Pose point202GardenloadfarControl1 = poseFactory.of(12, 26, 0);
     private final Pose point202GardenloadfarControl2 = poseFactory.of(20, 60, 0);
     private final Pose point202GardenloadfarControl3 = poseFactory.of(28, 92, 0);
     private final Pose point303FarflowerStart = poseFactory.of(39.2847, 109.6207, 70);
-    private final Pose point303Farflower = poseFactory.of(46.4937, 133.9645, 90);
+    private final Pose point303Farflower = poseFactory.of(46.4937, FIELD_SIZE_IN - HALF_LENGTH_IN, 90);
     private final Pose point303FarflowerControl1 = poseFactory.of(46.4937, 124, 0);
     private final Pose point404Flowerloadfar = poseFactory.of(37.8955, 116.0169, 90);
     private final Pose point404FlowerloadfarControl1 = poseFactory.of(46.4937, 125, 0);
@@ -34,7 +42,7 @@ public final class Red3Tips_1_0 {
     private final Pose point606Partneravoid = poseFactory.of(34.9825, 37.9133, 90);
     private final Pose point606PartneravoidControl1 = poseFactory.of(21.5181, 109.6871, 0);
     private final Pose point606PartneravoidControl2 = poseFactory.of(42.803, 100.7579, 0);
-    private final Pose point707Sideflower = poseFactory.of(7.9587, 46.6826, 180);
+    private final Pose point707Sideflower = poseFactory.of(HALF_LENGTH_IN, 46.6826, 180);
     private final Pose point707SideflowerControl1 = poseFactory.of(24, 38, 0);
     private final Pose point707SideflowerControl2 = poseFactory.of(17, 46.6826, 0);
     private final Pose point808Flowerloadnear = poseFactory.of(33.2141, 35.2785, 180);
@@ -43,7 +51,7 @@ public final class Red3Tips_1_0 {
     private final Pose point909ParkStart = poseFactory.of(33.2141, 35.2785, 180);
     private final Pose point909Park = poseFactory.of(8.2, 100.1746, 90);
     private final Pose point909ParkControl1 = poseFactory.of(28.2668, 46.2547, 0);
-    private final Pose point909ParkControl2 = poseFactory.of(7.6014, 61.337, 0);
+    private final Pose point909ParkControl2 = poseFactory.of(9.5, 64, 0);
 
     public Path path101Garden() {
         return Paths.curve(start, point101GardenControl1, point101GardenControl2, point101Garden).constant(point101Garden);
