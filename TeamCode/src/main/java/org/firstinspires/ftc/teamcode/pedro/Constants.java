@@ -49,35 +49,35 @@ public class Constants {
     });
 
     /**
-     * AutoTune Foresight export, 2026-11-26, with DriveConstants.frontStrafeScale = 1.0 (no strafe
-     * compensation) while the chassis still yawed about 30 deg when strafing. The forward and heading
-     * values look sound; the strafe ones (max strafe velocity, strafe deceleration and braking, strafe
-     * translational) were measured with that yaw. Re-run Foresight after the strafe is fixed or the
-     * compensation is set, and replace this whole block. Autonomous refuses to drive if this is null.
+     * AutoTune Foresight export, second run (2026-11-26), with DriveConstants.frontStrafeScale = 1.0.
+     * Max strafe velocity is 58.5 in/s (70% of forward), against 21.8 in/s in the first run while
+     * the chassis still yawed about 30 deg when strafing. Re-run Foresight and replace this whole
+     * block after any drivetrain change or a new frontStrafeScale. Autonomous refuses to drive if
+     * this is null.
      */
     public static ForesightConfig foresightConfig = new ForesightConfig(
             c -> {
-                Controller primaryTranslationalForward = Controller.proportional(0.3146650788727505);
-                Controller secondaryTranslationalForward = Controller.proportional(0.11626033863772138);
-                Controller primaryTranslationalLateral = Controller.proportional(0.3991613107515434);
-                Controller secondaryTranslationalLateral = Controller.proportional(0.1474794385360374);
+                Controller primaryTranslationalForward = Controller.proportional(0.29051173769663);
+                Controller secondaryTranslationalForward = Controller.proportional(0.10733632446230737);
+                Controller primaryTranslationalLateral = Controller.proportional(0.35773613725766984);
+                Controller secondaryTranslationalLateral = Controller.proportional(0.13217394383107298);
 
                 c.forwardTranslational.set(Controller.piecewise(secondaryTranslationalForward).put(2.5, primaryTranslationalForward));
                 c.strafeTranslational.set(Controller.piecewise(secondaryTranslationalLateral).put(2.5, primaryTranslationalLateral));
 
-                c.coast.set(Controller.proportionalFeedforward(0.011608935753202404));
-                c.brake.set(Controller.proportionalFeedforward(0.009867595390222044));
+                c.coast.set(Controller.proportionalFeedforward(0.010647373443948888));
+                c.brake.set(Controller.proportionalFeedforward(0.009050267427356555));
 
-                c.headingFeedback.set(Controller.proportional(4.253358625038861));
-                c.headingBrakeCoefficients.set(Vector2D.cartesian(0.051775604289299774, 0.006298193897146152));
+                c.headingFeedback.set(Controller.proportional(3.7896694900028614));
+                c.headingBrakeCoefficients.set(Vector2D.cartesian(0.045615092210871996, 0.006879128631569607));
 
-                c.linearBrakeCoefficients.set(Matrix.diag(0.12442525105231204, 0.008197113422656303));
-                c.quadraticBrakeCoefficients.set(Matrix.diag(0.0015138867118045039, 0.0031732933170629894));
+                c.linearBrakeCoefficients.set(Matrix.diag(0.10006900983091568, 0.02828458754860449));
+                c.quadraticBrakeCoefficients.set(Matrix.diag(0.00186154681863538, 0.0031064289789791916));
 
-                c.maxAchievableForwardVelocity.set(74.96601576339545);
-                c.maxAchievableStrafeVelocity.set(21.814159345924665);
-                c.naturalForwardDeceleration.set(26.316156290549884);
-                c.naturalStrafeDeceleration.set(55.451491682113506);
+                c.maxAchievableForwardVelocity.set(83.70364834637866);
+                c.maxAchievableStrafeVelocity.set(58.46072015841529);
+                c.naturalForwardDeceleration.set(25.462396361414296);
+                c.naturalStrafeDeceleration.set(51.95018804395945);
             }
     );
 

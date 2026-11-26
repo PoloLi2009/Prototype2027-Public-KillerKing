@@ -92,7 +92,7 @@ Killer King 全速横移时前轮推得比后轮多，起步阶段车头会转�
 
 `Red3Tips1.0`（`opmodes/autos/Red3TipsAuto.java`）是稳定版：只走固定路线，不用 Limelight，不分支，也不做时间截止。每段路径和每轮射击的开始时间都写进 RobotLog（`Red3Tips1.0` 标签），用来实测耗时。带视觉的试验版见下文 `Red3Tips1.0 Vision (test)`，两者路线相同。
 
-自动使用 Pedro Pathing 3.0.2（`com.pedropathing:revhub` / `tuning`）。首次使用前运行 AutoTune（电脑连上 Control Hub 的 Wi-Fi，浏览器打开 http://192.168.43.1:10158），依次完成 Mecanum、Pinpoint、Foresight 三个流程，把导出的配置粘贴到 `pedro/Constants.java`。`foresightConfig` 为空时，自动只提示调参，不会驱动底盘。Mecanum 和 Pinpoint 的结果（2026-11-26）与现有配置一致：轮子为 goBILDA 4-bar，两个编码器均为 FORWARD；偏移保留实测的 (-48, -125) mm，没有采用 AutoTune 原地旋转估算的 (-68.5, -143.1) mm。Foresight 已在同一天调过一版并写入 `Constants`，当时横移还会让车头转约 30°（未加补偿），横移相关参数（最高横移速度 21.8 in/s 等）需要在修好横移或定好补偿系数后重测。
+自动使用 Pedro Pathing 3.0.2（`com.pedropathing:revhub` / `tuning`）。首次使用前运行 AutoTune（电脑连上 Control Hub 的 Wi-Fi，浏览器打开 http://192.168.43.1:10158），依次完成 Mecanum、Pinpoint、Foresight 三个流程，把导出的配置粘贴到 `pedro/Constants.java`。`foresightConfig` 为空时，自动只提示调参，不会驱动底盘。Mecanum 和 Pinpoint 的结果（2026-11-26）与现有配置一致：轮子为 goBILDA 4-bar，两个编码器均为 FORWARD；偏移保留实测的 (-48, -125) mm，没有采用 AutoTune 原地旋转估算的 (-68.5, -143.1) mm。Foresight 同一天跑了两次，`Constants` 里是第二次的结果：最高前进 83.7 in/s、最高横移 58.5 in/s（第一次横移时车头会转约 30°，只测到 21.8 in/s，已作废）。底盘有改动或者改了 `frontStrafeScale`，都要重跑 Foresight。
 
 路线在 `opmodes/autos/Red3Tips_1_0.java`，与 Pedro Visualizer 导出一致，起点 (54.37, 9.44) in、270°，车头为 Intake 并贴住观众侧墙。车身按实测 479.5 × 348.2 mm（18.88 × 13.71 in）计算，起点、Garden、Far flower、Side flower 都让车头正好贴墙，停靠路径的第 2 控制点外移到 (9.5, 64) 避免转向时刮墙。流程：起点射预装球 → Garden 吸球 → 远端射击 → Far flower 吸球 → 远端射击 → 队友预装球 → 近端射击 → Side flower 吸球 → 近端射击 → 停靠。吸球时关闭球挡并以 1.0 功率运行 Intake 和通道；射击时等待飞轮转速和云台到位（最长 1.5 s；起点这一轮飞轮从静止起转，最长 3 s），打开球挡 100 ms 后送料 900 ms。云台使用手动程序的 `TurretAimCommand` 和红方目标，在接近射击点时提前瞄准。
 
