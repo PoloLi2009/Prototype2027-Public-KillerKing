@@ -44,14 +44,27 @@ public final class Drive extends SubsystemBase {
         double sin = Math.sin(yaw);
         double robotStrafe = strafe * cos + forward * sin;
         double robotForward = -strafe * sin + forward * cos;
+        driveRobotCentric(robotForward, robotStrafe, turn);
+    }
 
-        double fl = robotForward + robotStrafe + turn;
-        double bl = robotForward - robotStrafe + turn;
-        double fr = robotForward - robotStrafe - turn;
-        double br = robotForward + robotStrafe - turn;
+    /**
+     * Robot-relative drive; strafe is right-positive. The front wheels' share of the strafe is scaled
+     * by {@link DriveConstants#frontStrafeScale} to cancel the yaw this chassis picks up when it
+     * strafes. Forward and turn are unchanged.
+     */
+    public void driveRobotCentric(double forward, double strafe, double turn) {
+        double frontStrafe = strafe * DriveConstants.frontStrafeScale;
+        double fl = forward + frontStrafe + turn;
+        double bl = forward - strafe + turn;
+        double fr = forward - frontStrafe - turn;
+        double br = forward + strafe - turn;
         double scale = Math.max(1.0, Math.max(Math.max(Math.abs(fl), Math.abs(bl)),
                 Math.max(Math.abs(fr), Math.abs(br))));
         setPowers(fl / scale, bl / scale, fr / scale, br / scale);
+    }
+
+    public double getYawDegrees() {
+        return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
     }
 
     public void stop() {

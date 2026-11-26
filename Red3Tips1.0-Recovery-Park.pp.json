@@ -1,0 +1,604 @@
+{
+  "version": "2.0.0",
+  "timestamp": "2026-11-25T07:59:49.000Z",
+  "startPoint": {
+    "x": 54.3656,
+    "y": 9.439,
+    "headingDeg": 270
+  },
+  "lines": [
+    {
+      "id": "kk-01",
+      "color": "#15887e",
+      "name": "01 Garden",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 50,
+      "waitBeforeName": "",
+      "waitAfterName": "Intake at target",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 7.4252,
+        "y": 9.439
+      },
+      "controlPoints": [
+        {
+          "x": 37.7001,
+          "y": 12.3667
+        },
+        {
+          "x": 7.6473,
+          "y": 26.5441
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk-02",
+      "color": "#c36330",
+      "name": "02 Garden load / far",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 900,
+      "waitBeforeName": "",
+      "waitAfterName": "Volley estimate",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 39.2847,
+        "y": 109.6207
+      },
+      "controlPoints": [
+        {
+          "x": 12,
+          "y": 26
+        },
+        {
+          "x": 20,
+          "y": 60
+        },
+        {
+          "x": 28,
+          "y": 92
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 70,
+        "startDeg": 270,
+        "endDeg": 70,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk-03",
+      "color": "#307fb7",
+      "name": "03 Far flower",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 1500,
+      "waitBeforeName": "",
+      "waitAfterName": "Intake at target",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 46.4937,
+        "y": 132.061
+      },
+      "controlPoints": [
+        {
+          "x": 46.4937,
+          "y": 124
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 90,
+        "startDeg": 70,
+        "endDeg": 90,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk-04",
+      "color": "#a36d14",
+      "name": "04 Flower load / far",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 900,
+      "waitBeforeName": "",
+      "waitAfterName": "Volley estimate",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 37.8955,
+        "y": 116.0169
+      },
+      "controlPoints": [
+        {
+          "x": 46.4937,
+          "y": 125
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 90,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk-05",
+      "color": "#168d83",
+      "name": "05 Partner preloads",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 500,
+      "waitBeforeName": "",
+      "waitAfterName": "Intake at target",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 7.7388,
+        "y": 102.6752
+      },
+      "controlPoints": [
+        {
+          "x": 25.2284,
+          "y": 114.0389
+        },
+        {
+          "x": 7.7905,
+          "y": 124.1674
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 90,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk-05r",
+      "color": "#d62f6a",
+      "name": "05R Partner -> far (recovery)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 900,
+      "waitBeforeName": "",
+      "waitAfterName": "Volley estimate",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 37.8955,
+        "y": 116.0169
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 90,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk-09r",
+      "color": "#d62f6a",
+      "name": "09R Far -> park (recovery)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 8.2,
+        "y": 100.1746
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 90,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "shapes": [
+    {
+      "id": "biobuzz-red-hive",
+      "name": "Red HIVE",
+      "vertices": [
+        {
+          "x": 46,
+          "y": 50
+        },
+        {
+          "x": 48.599999999999994,
+          "y": 50
+        },
+        {
+          "x": 48.599999999999994,
+          "y": 91.4
+        },
+        {
+          "x": 46,
+          "y": 91.4
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-blue-hive",
+      "name": "Blue HIVE",
+      "vertices": [
+        {
+          "x": 96.5,
+          "y": 91.4
+        },
+        {
+          "x": 93.9,
+          "y": 91.4
+        },
+        {
+          "x": 93.9,
+          "y": 50
+        },
+        {
+          "x": 96.5,
+          "y": 50
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "biobuzz-flower-left",
+      "name": "Red Alliance FLOWER",
+      "vertices": [
+        {
+          "x": 0,
+          "y": 50.35
+        },
+        {
+          "x": 2.0999999999999943,
+          "y": 50.35
+        },
+        {
+          "x": 3.8000000000000114,
+          "y": 47
+        },
+        {
+          "x": 2.0999999999999943,
+          "y": 43.65
+        },
+        {
+          "x": 0,
+          "y": 43.65
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-flower-right",
+      "name": "Blue Alliance FLOWER",
+      "vertices": [
+        {
+          "x": 141.5,
+          "y": 98.1
+        },
+        {
+          "x": 139.4,
+          "y": 98.1
+        },
+        {
+          "x": 137.7,
+          "y": 94.75
+        },
+        {
+          "x": 139.4,
+          "y": 91.4
+        },
+        {
+          "x": 141.5,
+          "y": 91.4
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "biobuzz-flower-top",
+      "name": "Scoring-Side FLOWER",
+      "vertices": [
+        {
+          "x": 43.400000000000006,
+          "y": 141.5
+        },
+        {
+          "x": 50.099999999999994,
+          "y": 141.5
+        },
+        {
+          "x": 50.099999999999994,
+          "y": 139.4
+        },
+        {
+          "x": 46.75,
+          "y": 137.7
+        },
+        {
+          "x": 43.400000000000006,
+          "y": 139.4
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-flower-bottom",
+      "name": "Audience-Side FLOWER",
+      "vertices": [
+        {
+          "x": 91.15,
+          "y": 0
+        },
+        {
+          "x": 97.8,
+          "y": 0
+        },
+        {
+          "x": 97.8,
+          "y": 2.1
+        },
+        {
+          "x": 94.5,
+          "y": 3.8
+        },
+        {
+          "x": 91.15,
+          "y": 2.1
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "plan-6",
+      "name": "Partner / after 7.8 in shift",
+      "vertices": [
+        {
+          "x": 0,
+          "y": 126.3
+        },
+        {
+          "x": 14,
+          "y": 126.3
+        },
+        {
+          "x": 14,
+          "y": 140.3
+        },
+        {
+          "x": 0,
+          "y": 140.3
+        }
+      ],
+      "color": "#8293aa",
+      "fillColor": "#8293aa"
+    }
+  ],
+  "sequence": [
+    {
+      "kind": "path",
+      "lineId": "kk-01"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk-02"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk-03"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk-04"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk-05"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk-05r"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk-09r"
+    }
+  ],
+  "fieldPoints": [
+    {
+      "x": 0,
+      "y": 118.5,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 14,
+      "y": 118.5,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 14,
+      "y": 132.5,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 0,
+      "y": 132.5,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 1.5,
+      "y": 117.1,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 4.360000000000014,
+      "y": 117.1,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 7.219999999999999,
+      "y": 117.1,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 10.080000000000013,
+      "y": 117.1,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 58.75,
+      "y": 58.75,
+      "color": "#7c3aed",
+      "radius": 1.2,
+      "opacity": 0.95
+    },
+    {
+      "x": 58.75,
+      "y": 82.75,
+      "color": "#7c3aed",
+      "radius": 1.2,
+      "opacity": 0.95
+    }
+  ],
+  "robot": {
+    "forwardVelocity": 75,
+    "strafeVelocity": 65,
+    "aVelocity": 3.141592653589793,
+    "kFriction": 0.1,
+    "rLength": 18.878,
+    "rWidth": 13.7087,
+    "safetyMargin": 1,
+    "maxAcceleration": 50,
+    "maxDeceleration": 50
+  },
+  "activePaths": []
+}

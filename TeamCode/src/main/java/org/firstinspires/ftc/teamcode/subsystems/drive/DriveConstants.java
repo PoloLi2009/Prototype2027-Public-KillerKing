@@ -22,4 +22,11 @@ public final class DriveConstants {
             RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
 
     public static final double JOYSTICK_DEADZONE = 0.05;
+
+    // Strafe yaw compensation, shared by the TeleOp Drive and Pedro (CompensatedMecanum). The front
+    // wheels' share of every strafe command is multiplied by this: below 1.0 they push less, which
+    // cancels the yaw this chassis picks up when the front out-pushes the rear. 1.0 = no change.
+    // Find the value with "Strafe Compensation Test", then set it here; re-run Foresight after any
+    // change, since its tuning includes this scale.
+    public static double frontStrafeScale = 1.0;
 }
