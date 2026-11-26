@@ -117,8 +117,10 @@ public class Red3TipsAuto extends CommandOpMode {
         turret = new Turret(hardwareMap);
         vision = new LimelightVision(hardwareMap, LimelightVision.Alliance.RED);
         localization = new VisionLocalization();
-        shooterCommand = new ShooterCommand(shooter, this::getRuntime);
         turretAim = new TurretAimCommand(this::turretPose, () -> false, turret);
+        // Distance RPM stays off (Shooter's default), so the fixed far / near RPM below apply; the
+        // distance is passed so it can be switched on with shooter.toggleDistanceRpm().
+        shooterCommand = new ShooterCommand(shooter, this::getRuntime, turretAim::getTargetDistanceCm);
         follower.setPose(route.start);
     }
 
@@ -262,7 +264,11 @@ public class Red3TipsAuto extends CommandOpMode {
         showTelemetry();
     }
 
-    /** Same feed as the TeleOp's VisionReadCommand, but from the Pedro pose (one Pinpoint reader). */
+    /**
+     * Same feed as the TeleOp's VisionReadCommand, but from the Pedro pose (one Pinpoint reader).
+     * Pedro's pose is both the odometry and the field pose here. The returned X/Y correction is
+     * ignored: the auto never moves Pedro's pose from vision, it only reads the HIVE tilt.
+     */
     private void updateVision() {
         double now = System.nanoTime() / 1e9;
         Pose2D pose = turretPose();
@@ -270,7 +276,7 @@ public class Red3TipsAuto extends CommandOpMode {
                 pose.getX(DistanceUnit.METER), pose.getY(DistanceUnit.METER),
                 new Rotation2d(pose.getHeading(AngleUnit.RADIANS)));
         double estimatedTurret = turret.getEstimatedOffsetDegrees(now);
-        localization.update(now, odometry, -estimatedTurret,
+        localization.update(now, odometry, pose, -estimatedTurret,
                 Math.abs(turret.getOffsetDegrees() - estimatedTurret), vision.getNewFrame());
         tipWatcher.update(now, localization.getHiveTiltDegrees(), localization.getHiveMotionState());
     }

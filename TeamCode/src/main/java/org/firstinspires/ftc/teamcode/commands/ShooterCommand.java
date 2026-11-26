@@ -9,10 +9,12 @@ import java.util.function.DoubleSupplier;
 public final class ShooterCommand extends CommandBase {
     private final Shooter shooter;
     private final DoubleSupplier runtime;
+    private final DoubleSupplier hiveDistanceCm;
 
-    public ShooterCommand(Shooter shooter, DoubleSupplier runtime) {
+    public ShooterCommand(Shooter shooter, DoubleSupplier runtime, DoubleSupplier hiveDistanceCm) {
         this.shooter = shooter;
         this.runtime = runtime;
+        this.hiveDistanceCm = hiveDistanceCm;
         addRequirements(shooter);
     }
 
@@ -23,7 +25,7 @@ public final class ShooterCommand extends CommandBase {
 
     @Override
     public void execute() {
-        shooter.updateControl(runtime.getAsDouble());
+        shooter.updateControl(runtime.getAsDouble(), hiveDistanceCm.getAsDouble());
     }
 
     @Override

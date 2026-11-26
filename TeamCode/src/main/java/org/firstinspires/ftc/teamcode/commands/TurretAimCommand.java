@@ -16,9 +16,10 @@ public final class TurretAimCommand extends CommandBase {
     private final Supplier<Pose2D> poseSource;
     private final BooleanSupplier blueAlliance;
     private final Turret turret;
-    private boolean enabled;
+    private boolean enabled = true;
     private double targetX = TurretConstants.BLUE_TARGET_X_INCHES;
     private double targetY = TurretConstants.LOW_TARGET_Y_INCHES;
+    private double targetDistanceCm = Double.NaN;
     private double relativeTargetDegrees;
     private boolean targetReachable;
 
@@ -35,15 +36,13 @@ public final class TurretAimCommand extends CommandBase {
 
     @Override
     public void execute() {
-        if (!enabled) {
-            if (turret.getOffsetDegrees() != 0.0) {
-                turret.setOffsetDegrees(0);
-            }
-            return;
+        if (!enabled && turret.getOffsetDegrees() != 0.0) {
+            turret.setOffsetDegrees(0);
         }
 
         Pose2D pose = poseSource.get();
         if (pose == null) {
+            targetDistanceCm = Double.NaN;
             return;
         }
 
@@ -53,11 +52,23 @@ public final class TurretAimCommand extends CommandBase {
                 ? TurretConstants.BLUE_TARGET_X_INCHES : TurretConstants.RED_TARGET_X_INCHES;
         targetY = y < TurretConstants.SWITCH_Y_INCHES
                 ? TurretConstants.LOW_TARGET_Y_INCHES : TurretConstants.HIGH_TARGET_Y_INCHES;
-        double fieldTargetDegrees = Math.toDegrees(Math.atan2(targetY - y, targetX - x));
+        double deltaX = targetX - x;
+        double deltaY = targetY - y;
+        targetDistanceCm = DistanceUnit.CM.fromInches(Math.hypot(deltaX, deltaY));
+
+        if (!enabled) {
+            return;
+        }
+
+        double fieldTargetDegrees = Math.toDegrees(Math.atan2(deltaY, deltaX));
         relativeTargetDegrees = wrapDegrees(fieldTargetDegrees - pose.getHeading(AngleUnit.DEGREES));
         double offsetDegrees = wrapDegrees(relativeTargetDegrees - TurretConstants.CENTER_FACING_DEGREES);
         targetReachable = Math.abs(offsetDegrees) <= TurretConstants.MAX_OFFSET_DEGREES;
         turret.setOffsetDegrees(offsetDegrees);
+    }
+
+    public double getTargetDistanceCm() {
+        return targetDistanceCm;
     }
 
     public void addTelemetry(Telemetry telemetry) {
@@ -70,7 +81,7 @@ public final class TurretAimCommand extends CommandBase {
             telemetry.addData("目标相对车头", "%.1f°", relativeTargetDegrees);
             telemetry.addData("云台相对中位偏移", "%.1f° (限位 ±%.0f°)",
                     offset, TurretConstants.MAX_OFFSET_DEGREES);
-            telemetry.addData("发射口实际朝向", "%.1f°",
+            telemetry.addData("发射口指令朝向", "%.1f°",
                     wrapDegrees(TurretConstants.CENTER_FACING_DEGREES + offset));
             telemetry.addData("目标可达", targetReachable ? "是" : "超出行程");
         }

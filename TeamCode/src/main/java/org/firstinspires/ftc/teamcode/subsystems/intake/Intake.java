@@ -11,7 +11,7 @@ public final class Intake extends SubsystemBase {
     private final DcMotorEx feedMotor;
     private final Servo liftServo;
     private final Servo mirroredLiftServo;
-    private double liftPosition = IntakeConstants.INITIAL_LIFT_POSITION;
+    private double liftPosition = IntakeConstants.RAISED_LIFT_POSITION;
     private double power;
 
     public Intake(HardwareMap hardwareMap) {
@@ -28,11 +28,15 @@ public final class Intake extends SubsystemBase {
     }
 
     public void raiseLift() {
-        setLiftPosition(liftPosition - IntakeConstants.LIFT_STEP);
+        setLiftPosition(liftPosition + IntakeConstants.LIFT_STEP);
     }
 
     public void lowerLift() {
-        setLiftPosition(liftPosition + IntakeConstants.LIFT_STEP);
+        setLiftPosition(liftPosition - IntakeConstants.LIFT_STEP);
+    }
+
+    public void setPickupPosition(boolean pickingUp) {
+        setLiftPosition(pickingUp ? IntakeConstants.PICKUP_LIFT_POSITION : IntakeConstants.RAISED_LIFT_POSITION);
     }
 
     public double getLiftPosition() {

@@ -44,6 +44,7 @@ public class LimelightVision extends SubsystemBase {
     private boolean pipelineSetupFinished;
     private double lastTimestamp = Double.NaN;
     private Frame frame;
+    private Frame lastRawFrame;
     private String status = "Waiting for frame";
 
     public LimelightVision(HardwareMap hardwareMap, Alliance alliance) {
@@ -134,10 +135,20 @@ public class LimelightVision extends SubsystemBase {
             status = "Frame too old"; return;
         }
         Pose3D pose = result.getBotpose();
-        if (result.getBotposeTagCount() < VisionConstants.minimumTagCount || pose == null
-                || pose.getPosition() == null || pose.getPosition().unit == null
+        int tagCount = result.getBotposeTagCount();
+        if (pose == null || pose.getPosition() == null || pose.getPosition().unit == null
                 || pose.getOrientation() == null) {
             status = "No MT1 pose"; return;
+        }
+        double distance = result.getBotposeAvgDist();
+        // Camera time has a different clock origin; estimate host capture time from age + latency.
+        long captureNanos = System.nanoTime() - (long) ((age + latency) * 1e6);
+        Frame rawFrame = new Frame(pose, captureNanos, timestamp, actualPipeline, tagCount, distance);
+        if (tagCount > 0) {
+            lastRawFrame = rawFrame;
+        }
+        if (tagCount < VisionConstants.minimumTagCount) {
+            status = "Insufficient HIVE tags"; return;
         }
         if (result.getFiducialResults() == null || result.getFiducialResults().isEmpty()) {
             status = "No tag IDs"; return;
@@ -157,19 +168,19 @@ public class LimelightVision extends SubsystemBase {
             status = "Unexpected HIVE tag ID(s): " + unknownTagIds;
             return;
         }
-        double distance = result.getBotposeAvgDist();
         if (!Double.isFinite(distance) || distance <= 0) {
             status = "Invalid target distance"; return;
         }
-        // Camera time has a different clock origin; estimate host capture time from age + latency.
-        long captureNanos = System.nanoTime() - (long) ((age + latency) * 1e6);
-        frame = new Frame(pose, captureNanos, timestamp, actualPipeline,
-                result.getBotposeTagCount(), distance);
+        frame = rawFrame;
         status = "New MT1 frame";
     }
 
     /** Returns only a new frame from the most recent periodic call, otherwise null. */
     public Frame getNewFrame() { return frame; }
+
+    /** Returns the last fresh MT1 pose before application-specific HIVE checks. */
+    public Frame getLastRawFrame() { return lastRawFrame; }
+
     public boolean isBlueAlliance() { return alliance == Alliance.BLUE; }
     public int getExpectedPipeline() {
         return isBlueAlliance() ? VisionConstants.bluePipeline : VisionConstants.redPipeline;
@@ -181,5 +192,6 @@ public class LimelightVision extends SubsystemBase {
             camera.stop();
         }
         frame = null;
+        lastRawFrame = null;
     }
 }

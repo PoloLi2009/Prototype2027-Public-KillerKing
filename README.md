@@ -1,25 +1,26 @@
 # Prototype2027-Public-KillerKing
 
-Killer King 的 Driver Station 手动程序为蓝方 `Ba` 和红方 `Ba Red`（Test 分组）。项目基于 FIRST FTC SDK v12.0，TeamCode 使用 FTCLib 2.1.1 的 CommandOpMode、CommandBase 和 SubsystemBase。
+Killer King 的 Driver Station 手动程序为蓝方 `Blue` 和红方 `Red`（`Main` 分组），调参与测试程序在 `Quest` 分组。项目基于 FIRST FTC SDK v12.0，TeamCode 使用 FTCLib 2.1.1 的 CommandOpMode、CommandBase 和 SubsystemBase。
 
 ## Gamepad 1
 
 | 操作 | 功能 |
 | --- | --- |
-| 左摇杆 / 右摇杆 X | 场地坐标平移 / 自转 |
+| 左摇杆 / 右摇杆 X | 以启动时车头为驾驶前方平移 / 自转 |
 | START | 将当前车头方向设为场地前方 |
 | ↑ / ↓ | 升高 / 降低 Intake |
-| ← / → | 飞轮目标转速减 / 加 25 RPM |
+| ← / → | 飞轮目标转速减 / 加 25 RPM，距离模式下调整插值结果的偏移 |
 | RT（右扳机） | 按下打开球挡，等待 100 ms 后按设定功率送料，松开停止发射送料 |
-| LT（左扳机） | 按下关闭球挡，按住时以设定功率吸球 |
+| LT（左扳机） | 按下关闭球挡并放下 Intake，按住吸球，松开自动抬起 |
 | LB（左肩键） | 按住时以设定功率反转 Intake 和通道 |
 | A / B | 吸球、送料和反转的共同功率减 / 加 0.1 |
-| Y | 开关云台自瞄，关闭时云台回中 |
-| 右摇杆按下 | 切换自瞄使用的 Pinpoint / EKF 位姿，默认 Pinpoint |
+| 三角 / Y | 自瞄默认开启，按一下关闭并回中，再按开启 |
 
-按下 Driver Station 的 Start 后，飞轮目标为 3375 RPM，吸球、送料和反转初始功率为 1.0。电机优先级依次为 RT、LT、LB。LT 按下时优先关闭球挡。松开按键后，球挡保持上一次位置。
+按下 Driver Station 的 Start 后，`Blue` 和 `Red` 根据到当前 Hive 目标点的距离自动设置飞轮转速。吸球、送料和反转初始功率为 1.0。电机优先级依次为 RT、LT、LB。RT 和 LT 同时按下时优先开挡射击，松开 RT 后仍按住 LT 会关闭球挡。松开按键后，球挡保持上一次位置。
 
-Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。蓝方自瞄目标的 X 为 84 in，红方以场地中线镜像为 60 in。机器人 Y < 72 in 时选目标 Y = 60 in，其余位置选 Y = 84 in。云台中位朝车右（逆时针为正时记为 -90°），偏转范围为 ±175°，对应舵机 0.0 至 1.0。定位无有效位姿时，自瞄保持当前舵机位置。
+按住 RT 时开挡并送料，球挡打开后等待 100 ms。云台回中和跨越行程缺口时也按此方式发射。
+
+Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。这组 X、Y 对应场地中心。如果实际起点改变，在 `PinpointConstants` 修改 `START_X_INCHES` 和 `START_Y_INCHES`，车头朝向改变时也修改 `START_HEADING_DEGREES`。Intake 朝红方联盟墙对应 180°。正式开始前云台处于中位 0.50，朝车右（逆时针为正时记为 -90°）。START 后取得有效位姿即开始自瞄。蓝方自瞄目标的 X 为 84 in，红方为 60 in。机器人 Y < 72 in 时选目标 Y = 60 in，其余位置选 Y = 84 in。舵机位置减小时云台逆时针转动，总行程为 320°，相对中位可偏转 ±160°。定位无有效位姿时，自瞄保持当前舵机位置。
 
 ## 硬件配置
 
@@ -28,29 +29,58 @@ Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。蓝方�
 | `0` / `1` / `2` / `3` | 左前 / 左后 / 右前 / 右后底盘电机，左侧正向、右侧反向 |
 | `00` / `01` | 带编码器的飞轮电机（FORWARD，直接读取编码器速度） / 另一侧飞轮电机 |
 | `03` / `02` | Intake 电机 / 通道电机（反向） |
-| `s0` / `s00` | Intake 抬升舵机，初始位置 0.45 / 0.55，镜像控制 |
+| `s0` / `s00` | Intake 抬升舵机，默认抬起 0.70 / 0.30，按住 LT 吸球时 0.50 / 0.50 |
 | `s2` / `s01` | 云台舵机，同向控制 |
+| `s5` / `s05` | goBILDA RGB 指示灯，在 Robot Configuration 中配置为 Servo |
 | `s1` | 球挡舵机，关闭 0.55，打开 0.80 |
 | `imu` | Hub Logo 朝右，USB 口朝后 |
-| `od` | goBILDA Pinpoint，偏移 (-48, -125) mm，双编码器方向均为 REVERSED |
+| `od` | goBILDA Pinpoint，偏移 (-48, -125) mm，X、Y 编码器均为 FORWARD |
 | `limelight` | 可选 Limelight 3A，供 HIVE AprilTag 定位 |
+
+## Pinpoint 方向测试
+
+Driver Station 的 `Pinpoint Direction Test` 以启动时的车头对齐驾驶前方。Intake 朝红方联盟墙启动后，按手柄 1 的 A 标记测量起点，用左摇杆一次只沿一个方向平移。站在蓝方面朝场内时，左移预期场地 ΔY 为负，后移预期场地 ΔX 为正。遥测同时显示场地坐标增量、标记时车体坐标下的前向和左向增量，以及航向变化。
 
 ## Limelight 视觉定位
 
-先在 Limelight 网页端给下面两个 pipeline 分别上传地图。选择对应的 OpMode 后点 INIT，程序会读取相机当前的 pipeline，并在需要时发送切换请求。看到 `Pipeline P0 ready` 或 `Pipeline P1 ready` 表示相机已经切到对应编号。按 START 后，程序只读取相机结果。若编号与程序不符，遥测会显示 `Wrong pipeline`，该帧不会送入融合。
+先在 Limelight 网页端给下面两个 pipeline 分别上传地图。选择对应的 OpMode 后点 INIT，程序会读取相机当前的 pipeline，并在需要时发送切换请求。看到 `Pipeline P0 ready` 或 `Pipeline P1 ready` 表示相机已经切到对应编号。按 START 后，程序只读取相机结果。若编号与程序不符，遥测会显示 `Wrong pipeline`，程序会忽略该帧。
 
 | 地图文件 | Limelight pipeline | 视觉测试 | 手动驾驶 |
 | --- | --- | --- | --- |
-| `BIOBUZZ_HiveFlat_Blue.fmap` | 0 | `Vision Fusion Command Test - Blue` | `Ba` |
-| `BIOBUZZ_HiveFlat_Red.fmap` | 1 | `Vision Fusion Command Test - Red` | `Ba Red` |
+| `BIOBUZZ_HiveFlat_Blue.fmap` | 0 | `Vision Fusion Command Test - Blue` | `Blue` |
+| `BIOBUZZ_HiveFlat_Red.fmap` | 1 | `Vision Fusion Command Test - Red` | `Red` |
 
 两张地图都在 `TeamCode/src/main/assets/vision/`。按 Killer King 实车测量值填写两套 pipeline 的相机 Forward、Right、Up 和 Roll、Pitch、Yaw。以云台转轴在地面的投影为原点。将云台置于 0.5（发射口朝车右）后，按车头作为 +X 标定相机外参。
 
-在 `VisionLocalizationConstants` 填写转轴相对底盘中心的前向和左向偏移，初值均为 0。视觉校正使用曝光时的云台估算角。云台缓慢跟瞄时可以继续融合，转动过快或估算角明显落后指令角时会拒绝该帧。可在 `TurretConstants` 按实车带载行程调整估算速度，初值为 300°/s。
+在 `VisionLocalizationConstants` 填写转轴相对底盘中心的前向和左向偏移，初值均为 0。视觉校正使用曝光时的云台估算角。云台转动过快或估算角明显落后指令角时会拒绝该帧。可在 `TurretConstants` 按实车带载行程调整估算速度，初值为 300°/s。
 
-遥测并列显示 Pinpoint、HIVE 校正后的视觉位姿、EKF 和 WPILib 对照结果。场地转换初值为地图坐标顺时针旋转 90°、场地中心对应 Pinpoint 的 (72, 72) in。在场上确认外参和坐标轴后，按下右摇杆，让 Y 自瞄使用 EKF。
+`Vision Fusion Command Test` 的蓝、红版本并列显示 Pinpoint 和 Limelight 返回的原始 MT1 位姿。两组位置都显示为英寸，MT1 保留 fmap 的原点和轴向。遥测标出上一帧的年龄。手柄 1 左摇杆平移，右摇杆左右拨动控制底盘自转。
 
-视觉超过 0.35 s 没有刷新时，遥测显示 `EKF (odometry only)`。超过 1.0 s 后，自瞄自动回退到 Pinpoint。重新识别标签后，正常校正可立即恢复 EKF。超过原有异常值阈值的修正，需要三帧经里程计对齐后相互一致才会重新定位。Pinpoint 掉读 0.25 s 内保留滤波状态，掉读期间云台保持位置，无相机时可使用 Pinpoint 自瞄。
+红蓝 Limelight 版以 Pinpoint 为主要位姿来源。Limelight 与当前 Pinpoint 的平面位置相差至少 0.30 m，且至少三张有效画面在扣除里程计运动后相互一致，并持续至少 0.60 s，程序才校准一次。每帧用视觉位置减去拍摄时刻的 Pinpoint 原始位置，得到场地平移量。确认期间，各帧平移量与首帧的差须在 0.12 m 以内。校准只更新 X、Y，车头航向始终取 Pinpoint。相邻有效帧间隔超过 0.20 s 时从头确认。
+
+场地原点是站在红方人站面朝场内时右手边的场地角。X 朝蓝方递增，Y 朝计分侧递增。Limelight 的中心坐标顺时针旋转 90°，再平移 (+72, +72) in。以英寸表示就是 X = 72 + 地图 Y，Y = 72 − 地图 X，航向同时减去 90°。遥测 `Limelight field X/Y/Heading` 显示拍摄时的视觉位姿，其中航向是根据云台角换算的视觉估计值，仅用于对照。`X/Y/Heading` 显示自瞄使用的当前 Pinpoint 位姿。`Last vision discrepancy` 显示最近的位置差和确认帧数。
+
+丢失 Tag 时，Pinpoint 从上一次视觉校准继续积分。首次校准前，Pinpoint 从预设起点积分。里程计掉读时，云台保持当前位置，直到再次取得位姿。
+
+`Blue`（蓝方 P0）、`Red`（红方 P1）和两方的 Tuning 在运行期间持续用有效视觉帧校正 Pinpoint。丢 Tag 后保留已确认的位置偏移，每轮继续用 Pinpoint 更新位置和车头航向。若 Pinpoint 本身不可用，程序可用 200 ms 内的有效视觉位姿临时瞄准。两者都不可用时保持云台角度。Pinpoint 起点只用于初始化里程计，Limelight 根据 Tag 地图解算场地上的绝对位置。云台自瞄开关独立于这一过程。
+
+## Limelight 飞轮调参
+
+在 Driver Station 的 `Quest` 分组选择蓝方 `Ba Limelight Tuning` 或红方 `Ba Red Limelight Tuning`。启动后默认使用视觉校正和固定目标 3375 RPM 的飞轮 PIDF，手柄 2 的 X 可试用距离插值。调参页显示目标及实测 RPM、飞轮实际输出、手动设定功率、增益、送料和球挡状态。每次启动从代码默认值开始。
+
+`到目标 Hive` 显示自瞄位姿计算的平面直线距离，单位为厘米。两块灯单独使用 Pinpoint 原始里程计计算到当前联盟 Hive 目标点的距离，90–160 cm（含两端）亮绿，区间外或 Pinpoint 不可用时亮红。灯的距离计算采用预设起点和里程计增量。Limelight 的软件位置校正仅影响自瞄和飞轮距离，不会引起指示灯距离跳变。初始化和停止时熄灯。距离区间在 `HiveLightsConstants` 中配置。
+
+距离模式在 109.4 cm / 3212 RPM、125.2 cm / 3312 RPM 和 143.0 cm / 3462 RPM 之间分段线性插值。超出标定范围时使用对应的端点转速。位姿不可用时使用固定转速设定，再叠加手柄设定的偏移。
+
+| 操作 | 功能 |
+| --- | --- |
+| 手柄 2 ← / → | 循环选择 P、I、D、F |
+| 手柄 2 ↑ / ↓ | 增 / 减所选增益，P 步长 0.00010，I 和 F 为 0.00001，D 为 0.000001 |
+| 手柄 2 A | 切换 PIDF / 手动飞轮功率 |
+| 手柄 2 X | 切换固定目标 RPM / 按距离插值 |
+| 手柄 2 LB / RB | 减 / 加手动飞轮功率 0.01，范围 0 到 1 |
+| 手柄 1 ← / → | 减 / 加目标转速 25 RPM |
+| 手柄 1 A / B | 减 / 加吸球、送料和反转功率 0.1 |
 
 ## 自动 `Red3Tips1.0`（Auto 分组）
 
@@ -65,7 +95,7 @@ Pinpoint 首次进入 READY 时写入起始位姿 (72, 72) in、180°。蓝方�
 | 06 近端 | (34.98, 37.91) | 90° | +41.2° | 0.382 |
 | 08 近端 | (33.21, 35.28) | 180° | -47.4° | 0.635 |
 
-以上按云台中位朝车右、±175° 行程和红方目标 (60, 60/84) in 计算，均留有 117° 以上余量。07 在前 60% 路程从 90° 转到 180°，正对 Side flower，避免起步时原地转 90°。远端和近端飞轮转速暂与手动程序相同（3375 RPM），在 `Red3TipsAuto` 中按实测调整。
+以上按云台中位朝车右、±175° 行程和红方目标 (60, 60/84) in 计算，均留有 117° 以上余量。07 在前 60% 路程从 90° 转到 180°，正对 Side flower，避免起步时原地转 90°。远端和近端飞轮转速暂与手动程序相同（3375 RPM），在 `Red3TipsAuto` 中按实测调整。自动不开距离插值，`ShooterCommand` 已接入云台算出的目标距离，需要时可在自动开始时调用 `shooter.toggleDistanceRpm()`。
 
 ### 04 翻转检查与远端补射
 

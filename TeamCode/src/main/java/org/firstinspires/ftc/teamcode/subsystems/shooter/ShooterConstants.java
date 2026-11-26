@@ -17,10 +17,35 @@ public final class ShooterConstants {
     public static final double MAX_RPM = 6000;
     public static final double RPM_STEP = 25;
     public static final double KP = 0.0050;
+    public static final double KI = 0.0;
     public static final double KD = 0.0000;
     public static final double KF = 0.00020;
+    public static final double MANUAL_POWER_STEP = 0.01;
+    public static final double INITIAL_MANUAL_POWER = KF * INITIAL_RPM;
     public static final double MIN_POWER = -0.1;
     public static final double MAX_POWER = 1.0;
     public static final double FILTER_ALPHA = 0.4;
     public static final double MIN_CONTROL_DT_SECONDS = 1e-4;
+
+    // Measured distance to the target Hive (cm) and corresponding flywheel RPM.
+    static final double[][] DISTANCE_RPM_POINTS = {
+            {109.4, 3212},
+            {125.2, 3312},
+            {143.0, 3462}
+    };
+
+    public enum Gain {
+        P(KP, 0.00010),
+        I(KI, 0.00001),
+        D(KD, 0.000001),
+        F(KF, 0.00001);
+
+        public final double initialValue;
+        public final double step;
+
+        Gain(double initialValue, double step) {
+            this.initialValue = initialValue;
+            this.step = step;
+        }
+    }
 }
