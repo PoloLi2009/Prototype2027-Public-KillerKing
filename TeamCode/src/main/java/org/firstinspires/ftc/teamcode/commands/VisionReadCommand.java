@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.commands;
 
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.geometry.Pose2d;
-import com.arcrobotics.ftclib.geometry.Translation2d;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -33,15 +32,17 @@ public final class VisionReadCommand extends CommandBase {
     @Override
     public void execute() {
         double now = System.nanoTime() / 1e9;
-        // The vision heading estimate assumes the web yaw is calibrated with the turret centered.
+        // The Limelight web camera yaw is 0; VisionLocalization adds the turret's centered facing.
         // The turret estimate is CCW; the Spinup solver expects CW.
         estimatedTurretOffset = turret.getEstimatedOffsetDegrees(now);
         double trackingError = Math.abs(turret.getOffsetDegrees() - estimatedTurretOffset);
         LimelightVision.Frame frame = vision.getNewFrame();
-        Translation2d offset = localization.update(now, pinpoint.getRawOdometry(), pinpoint.getPose(),
-                -estimatedTurretOffset, trackingError, frame);
-        if (offset != null) {
-            pinpoint.setFieldOffset(offset);
+        VisionLocalization.FieldAlignment alignment = localization.update(now, pinpoint.getRawOdometry(),
+                pinpoint.getPose(), -estimatedTurretOffset, trackingError, frame);
+        if (alignment != null) {
+            // Rewrite the Pinpoint itself, so its own pose is the corrected one from now on.
+            pinpoint.rewritePose(alignment.rotation, alignment.translation);
+            localization.onOdometryRewritten();
         }
     }
 
@@ -55,6 +56,14 @@ public final class VisionReadCommand extends CommandBase {
                 fieldPose.getX(), fieldPose.getY(), AngleUnit.RADIANS, fieldPose.getRotation().getRadians());
     }
 
+    /**
+     * Makes the next valid Limelight frame overwrite Pinpoint X/Y without the usual confirmation, then
+     * corrects the heading from frames taken while the robot and turret are still.
+     */
+    public void forceVisionAlignment() {
+        localization.requestForcedAlignment(System.nanoTime() / 1e9);
+    }
+
     public void addTelemetry(Telemetry telemetry) {
         pinpoint.addTelemetry(telemetry);
         if (pinpoint.getRawOdometry() != null) {
@@ -63,6 +72,8 @@ public final class VisionReadCommand extends CommandBase {
         telemetry.addData("Limelight", "%s / P%d / %s", vision.isBlueAlliance() ? "Blue" : "Red",
                 vision.getExpectedPipeline(), vision.getStatus());
         telemetry.addData("Vision localization", localization.getStatus());
+        telemetry.addData("Forced alignment (circle / B)", localization.getForcedAlignmentStatus());
+        telemetry.addData("Pinpoint rewrites by vision", pinpoint.getRewriteCount());
         telemetry.addData("Aim pose source", getAimPoseStatus());
         telemetry.addData("Camera turret estimate / command", "%.1f° / %.1f°",
                 estimatedTurretOffset, turret.getOffsetDegrees());
@@ -94,8 +105,11 @@ public final class VisionReadCommand extends CommandBase {
             }
             return "Holding (waiting for pose)";
         }
-        return localization.getAcceptedCount() == 0
-                ? "Pinpoint (preset start)" : "Pinpoint (vision X/Y, Pinpoint heading)";
+        if (localization.getAcceptedCount() == 0) {
+            return "Pinpoint (preset start)";
+        }
+        return localization.isHeadingCalibrated()
+                ? "Pinpoint (vision X/Y and heading)" : "Pinpoint (vision X/Y, Pinpoint heading)";
     }
 
     private static void addPoseTelemetry(Telemetry telemetry, String label, Pose2d pose) {

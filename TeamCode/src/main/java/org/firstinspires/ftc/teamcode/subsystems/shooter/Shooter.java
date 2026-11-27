@@ -20,8 +20,10 @@ public final class Shooter extends SubsystemBase {
     private double rpmTrim;
     private boolean distanceRpmEnabled;
     private double filteredRpm;
+    private double lastRawRpm;
     private double lastTime;
     private double power;
+    private double powerOverride = Double.NaN;
     private double integralPower;
     private boolean hasPreviousFeedbackSample;
     private boolean manual;
@@ -91,7 +93,8 @@ public final class Shooter extends SubsystemBase {
         double dt = Math.max(now - lastTime, ShooterConstants.MIN_CONTROL_DT_SECONDS);
         lastTime = now;
 
-        double rawRpm = encoderMotor.getVelocity() * 60.0 / ShooterConstants.TICKS_PER_REVOLUTION;
+        double rawRpm = readRawRpm();
+        lastRawRpm = rawRpm;
         double previousRpm = filteredRpm;
         filteredRpm += ShooterConstants.FILTER_ALPHA * (rawRpm - filteredRpm);
         if (manual) {
@@ -113,7 +116,46 @@ public final class Shooter extends SubsystemBase {
         }
         double outputRange = ShooterConstants.MAX_POWER - ShooterConstants.MIN_POWER;
         integralPower = Range.clip(integralPower, -outputRange, outputRange);
-        setPower(Range.clip(basePower + integralPower, ShooterConstants.MIN_POWER, ShooterConstants.MAX_POWER));
+        double output = Range.clip(basePower + integralPower, ShooterConstants.MIN_POWER, ShooterConstants.MAX_POWER);
+        setPower(Double.isNaN(powerOverride) ? output : powerOverride);
+    }
+
+    /** Reads the flywheel encoder now. updateControl() reads it itself every loop. */
+    public double readRawRpm() {
+        return encoderMotor.getVelocity() * 60.0 / ShooterConstants.TICKS_PER_REVOLUTION;
+    }
+
+    /** The unfiltered RPM read by the last updateControl(). */
+    public double getLastRawRpm() {
+        return lastRawRpm;
+    }
+
+    /** The power sent to the flywheel last. */
+    public double getPower() {
+        return power;
+    }
+
+    /** Open-loop flywheel power for tuning. The next updateControl() sends its own output again. */
+    public void setOpenLoopPower(double power) {
+        setPower(Range.clip(power, ShooterConstants.MIN_POWER, ShooterConstants.MAX_POWER));
+    }
+
+    /**
+     * Makes updateControl() send {@code power} instead of its output while it keeps filtering and
+     * integrating (the tuner brakes the flywheel this way, like a ball taking energy). NaN clears it.
+     */
+    public void setPowerOverride(double power) {
+        powerOverride = Double.isNaN(power) ? Double.NaN
+                : Range.clip(power, ShooterConstants.MIN_POWER, ShooterConstants.MAX_POWER);
+    }
+
+    /** Replaces all four gains (the TeleOp tuning keys step from these) and clears the integral. */
+    public void setGains(double p, double i, double d, double f) {
+        gains.put(Gain.P, p);
+        gains.put(Gain.I, i);
+        gains.put(Gain.D, d);
+        gains.put(Gain.F, f);
+        resetFeedback();
     }
 
     private static double interpolateRpm(double distanceCm) {

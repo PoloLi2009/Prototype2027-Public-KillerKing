@@ -16,10 +16,15 @@ public final class ShooterConstants {
     public static final double MIN_RPM = 0.0;
     public static final double MAX_RPM = 6000;
     public static final double RPM_STEP = 25;
-    public static final double KP = 0.0050;
-    public static final double KI = 0.0;
-    public static final double KD = 0.0000;
-    public static final double KF = 0.00020;
+    // Shooter Auto Tuner, 2026-11-27, 13.4 V, 20 ms loop: 6404 RPM per unit power, time constant
+    // 1.12 s, so 3375 RPM needs 0.586 power. KF fits a fresh battery (the old 0.0002 ran about
+    // 70 RPM fast there); KI makes up for the battery dropping. KP 0.0014 had the best dip recovery
+    // without overshoot; KD stays 0 because it only amplifies the +/-18 RPM encoder noise. Before
+    // (KP 0.001, KI 0, KD 0.0001, KF 0.0002) the distance table and auto RPMs were set.
+    public static final double KP = 0.0014;
+    public static final double KI = 0.0007;
+    public static final double KD = 0.0;
+    public static final double KF = 0.000174;
     public static final double MANUAL_POWER_STEP = 0.01;
     public static final double INITIAL_MANUAL_POWER = KF * INITIAL_RPM;
     public static final double MIN_POWER = -0.1;
@@ -27,11 +32,13 @@ public final class ShooterConstants {
     public static final double FILTER_ALPHA = 0.4;
     public static final double MIN_CONTROL_DT_SECONDS = 1e-4;
 
-    // Measured distance to the target Hive (cm) and corresponding flywheel RPM.
+    // Distance to the target Hive (cm) and flywheel RPM, measured 2026-11-27 with the tuned gains above.
+    // (Before, under KP 0.001 / KD 0.0001 / KF 0.0002: 109.4 / 3177, 125.2 / 3277, 143.0 / 3427.)
     static final double[][] DISTANCE_RPM_POINTS = {
-            {109.4, 3212},
-            {125.2, 3312},
-            {143.0, 3462}
+            {104.0, 3275},
+            {118.4, 3350},
+            {138.4, 3400},
+            {170.0, 3600}
     };
 
     public enum Gain {

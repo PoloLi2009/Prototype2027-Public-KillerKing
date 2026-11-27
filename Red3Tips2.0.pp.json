@@ -1,0 +1,995 @@
+{
+  "version": "2.0.0",
+  "timestamp": "2026-11-27T05:04:01.000Z",
+  "startPoint": {
+    "x": 54.3656,
+    "y": 9.439,
+    "headingDeg": 270.0
+  },
+  "lines": [
+    {
+      "id": "kk20-01",
+      "color": "#15887e",
+      "name": "01 Garden",
+      "waitBeforeMs": 2400,
+      "waitAfterMs": 1300,
+      "waitBeforeName": "00 Preload volley",
+      "waitAfterName": "Pickup 0.35 s, back off 5 cm, return, 0.35 s",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 6.9632,
+        "y": 9.9654
+      },
+      "controlPoints": [
+        {
+          "x": 37.7001,
+          "y": 12.3667
+        },
+        {
+          "x": 7.6473,
+          "y": 26.5441
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-02",
+      "color": "#c36330",
+      "name": "02 Garden load / to the Far flower",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 1900,
+      "waitBeforeName": "",
+      "waitAfterName": "Volley (Garden) at the FLOWER foot, then turn on the spot to 90 deg",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 46.1844,
+        "y": 120.4723
+      },
+      "controlPoints": [
+        {
+          "x": 36.8968,
+          "y": 7.2044
+        },
+        {
+          "x": 34.2938,
+          "y": 41.1713
+        },
+        {
+          "x": 16.8194,
+          "y": 115.9993
+        },
+        {
+          "x": 25.7275,
+          "y": 73.8934
+        },
+        {
+          "x": 48.696,
+          "y": 112.9044
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-03",
+      "color": "#307fb7",
+      "name": "03 Far flower (scoop down, empty)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 2050,
+      "waitBeforeName": "",
+      "waitAfterName": "Collect 0.75 s, volley (FLOWER) from inside",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 46.8236,
+        "y": 136.8596
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 90.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-04",
+      "color": "#a36d14",
+      "name": "04 Out of the Far flower",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 36.5128,
+        "y": 119.5321
+      },
+      "controlPoints": [
+        {
+          "x": 47.3126,
+          "y": 118.1413
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 90.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-05",
+      "color": "#168d83",
+      "name": "04 Turning (30 in/s)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 29.6141,
+        "y": 121.8702
+      },
+      "controlPoints": [
+        {
+          "x": 33.5021,
+          "y": 119.9198
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 48.84,
+        "startDeg": 90.0,
+        "endDeg": 48.84,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-06",
+      "color": "#59a14f",
+      "name": "05 Partner preloads (turning, 30 in/s)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 8.6837,
+        "y": 112.7736
+      },
+      "controlPoints": [
+        {
+          "x": 21.6056,
+          "y": 124.5859
+        },
+        {
+          "x": 10.0139,
+          "y": 118.1921
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 270.0,
+        "startDeg": 408.84000000000003,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-07",
+      "color": "#9760a2",
+      "name": "05 Partner preloads (square)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 500,
+      "waitBeforeName": "",
+      "waitAfterName": "Pickup 0.5 s (no back-off)",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 7.7388,
+        "y": 102.6752
+      },
+      "controlPoints": [
+        {
+          "x": 8.3261,
+          "y": 111.3169
+        },
+        {
+          "x": 7.7388,
+          "y": 110.5992
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-08",
+      "color": "#d1495b",
+      "name": "06 Partner load / near (lane)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 1300,
+      "waitBeforeName": "",
+      "waitAfterName": "Volley (partner preloads) at the lane end",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 37.1898,
+        "y": 31.2595
+      },
+      "controlPoints": [
+        {
+          "x": 8.5,
+          "y": 116.0
+        },
+        {
+          "x": 44.1147,
+          "y": 100.0
+        },
+        {
+          "x": 34.0,
+          "y": 104.0
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-09",
+      "color": "#6c757d",
+      "name": "07 Side flower (turn in)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 19.66,
+        "y": 46.6183
+      },
+      "controlPoints": [
+        {
+          "x": 25.8715,
+          "y": 35.0879
+        },
+        {
+          "x": 25.0,
+          "y": 46.6183
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 180.0,
+        "startDeg": 270.0,
+        "endDeg": 180.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-10",
+      "color": "#e07a5f",
+      "name": "07 Side flower",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 750,
+      "waitBeforeName": "",
+      "waitAfterName": "FLOWER (scoop down)",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 9.035,
+        "y": 46.6183
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 180.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-11",
+      "color": "#3d405b",
+      "name": "08 Flower load / near (back out)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 1300,
+      "waitBeforeName": "",
+      "waitAfterName": "Volley (FLOWER balls) at the back-out end, scoop up as it fires",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 29.9919,
+        "y": 36.4792
+      },
+      "controlPoints": [
+        {
+          "x": 31.9721,
+          "y": 48.5125
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 180.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-12",
+      "color": "#81b29a",
+      "name": "09 Park / up field",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 17.9,
+        "y": 56.0
+      },
+      "controlPoints": [
+        {
+          "x": 22.5,
+          "y": 46.6183
+        },
+        {
+          "x": 19.5,
+          "y": 52.5
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 180.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-13",
+      "color": "#f2cc8f",
+      "name": "09 Park / line up (15 in/s) (turning)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 13.6705,
+        "y": 60.3071
+      },
+      "controlPoints": [
+        {
+          "x": 18.8472,
+          "y": 58.9599
+        },
+        {
+          "x": 16.2548,
+          "y": 59.1163
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 270.0,
+        "startDeg": 180.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-14",
+      "color": "#5e548e",
+      "name": "09 Park / line up (15 in/s) (square)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 9.5,
+        "y": 65.5
+      },
+      "controlPoints": [
+        {
+          "x": 11.8893,
+          "y": 61.1278
+        },
+        {
+          "x": 10.112,
+          "y": 62.4399
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk20-15",
+      "color": "#15887e",
+      "name": "09 Park / push partner into the zone (back first, end)",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 9.5,
+        "y": 88.5
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 0,
+        "endDeg": 0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "shapes": [
+    {
+      "id": "biobuzz-red-hive",
+      "name": "Red HIVE",
+      "vertices": [
+        {
+          "x": 46,
+          "y": 50
+        },
+        {
+          "x": 48.599999999999994,
+          "y": 50
+        },
+        {
+          "x": 48.599999999999994,
+          "y": 91.4
+        },
+        {
+          "x": 46,
+          "y": 91.4
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-blue-hive",
+      "name": "Blue HIVE",
+      "vertices": [
+        {
+          "x": 96.5,
+          "y": 91.4
+        },
+        {
+          "x": 93.9,
+          "y": 91.4
+        },
+        {
+          "x": 93.9,
+          "y": 50
+        },
+        {
+          "x": 96.5,
+          "y": 50
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "biobuzz-flower-left",
+      "name": "Red Alliance FLOWER",
+      "vertices": [
+        {
+          "x": 0,
+          "y": 50.35
+        },
+        {
+          "x": 2.0999999999999943,
+          "y": 50.35
+        },
+        {
+          "x": 3.8000000000000114,
+          "y": 47
+        },
+        {
+          "x": 2.0999999999999943,
+          "y": 43.65
+        },
+        {
+          "x": 0,
+          "y": 43.65
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-flower-right",
+      "name": "Blue Alliance FLOWER",
+      "vertices": [
+        {
+          "x": 141.5,
+          "y": 98.1
+        },
+        {
+          "x": 139.4,
+          "y": 98.1
+        },
+        {
+          "x": 137.7,
+          "y": 94.75
+        },
+        {
+          "x": 139.4,
+          "y": 91.4
+        },
+        {
+          "x": 141.5,
+          "y": 91.4
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "biobuzz-flower-top",
+      "name": "Scoring-Side FLOWER",
+      "vertices": [
+        {
+          "x": 43.400000000000006,
+          "y": 141.5
+        },
+        {
+          "x": 50.099999999999994,
+          "y": 141.5
+        },
+        {
+          "x": 50.099999999999994,
+          "y": 139.4
+        },
+        {
+          "x": 46.75,
+          "y": 137.7
+        },
+        {
+          "x": 43.400000000000006,
+          "y": 139.4
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-flower-bottom",
+      "name": "Audience-Side FLOWER",
+      "vertices": [
+        {
+          "x": 91.15,
+          "y": 0
+        },
+        {
+          "x": 97.8,
+          "y": 0
+        },
+        {
+          "x": 97.8,
+          "y": 2.1
+        },
+        {
+          "x": 94.5,
+          "y": 3.8
+        },
+        {
+          "x": 91.15,
+          "y": 2.1
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "partner-robot",
+      "name": "Partner robot (16 x 16, before the push)",
+      "vertices": [
+        {
+          "x": 0,
+          "y": 78.33
+        },
+        {
+          "x": 16,
+          "y": 78.33
+        },
+        {
+          "x": 16,
+          "y": 94.33
+        },
+        {
+          "x": 0,
+          "y": 94.33
+        }
+      ],
+      "color": "#8293aa",
+      "fillColor": "#8293aa"
+    }
+  ],
+  "sequence": [
+    {
+      "kind": "path",
+      "lineId": "kk20-01"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-02"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-03"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-04"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-05"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-06"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-07"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-08"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-09"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-10"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-11"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-12"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-13"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-14"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk20-15"
+    }
+  ],
+  "fieldPoints": [
+    {
+      "x": 0,
+      "y": 94.33,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 11,
+      "y": 94.33,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 11,
+      "y": 117.92,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 0,
+      "y": 117.92,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 1.4,
+      "y": 95.73,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 4.2,
+      "y": 95.73,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 7.0,
+      "y": 95.73,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 9.8,
+      "y": 95.73,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 58.75,
+      "y": 58.75,
+      "color": "#7c3aed",
+      "radius": 1.2,
+      "opacity": 0.95
+    },
+    {
+      "x": 58.75,
+      "y": 82.75,
+      "color": "#7c3aed",
+      "radius": 1.2,
+      "opacity": 0.95
+    }
+  ],
+  "robot": {
+    "forwardVelocity": 75,
+    "strafeVelocity": 65,
+    "aVelocity": 3.141592653589793,
+    "kFriction": 0.1,
+    "rLength": 18.878,
+    "rWidth": 13.7087,
+    "safetyMargin": 1,
+    "maxAcceleration": 50,
+    "maxDeceleration": 50
+  },
+  "activePaths": []
+}

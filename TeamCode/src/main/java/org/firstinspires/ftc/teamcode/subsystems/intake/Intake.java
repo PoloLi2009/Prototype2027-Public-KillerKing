@@ -11,8 +11,9 @@ public final class Intake extends SubsystemBase {
     private final DcMotorEx feedMotor;
     private final Servo liftServo;
     private final Servo mirroredLiftServo;
-    private double liftPosition = IntakeConstants.RAISED_LIFT_POSITION;
-    private double power;
+    private double liftPosition = IntakeConstants.LIFT_POSITION;
+    private double intakePower;
+    private double feedPower;
 
     public Intake(HardwareMap hardwareMap) {
         intakeMotor = hardwareMap.get(DcMotorEx.class, IntakeConstants.INTAKE_MOTOR_NAME);
@@ -35,29 +36,31 @@ public final class Intake extends SubsystemBase {
         setLiftPosition(liftPosition - IntakeConstants.LIFT_STEP);
     }
 
-    public void setPickupPosition(boolean pickingUp) {
-        setLiftPosition(pickingUp ? IntakeConstants.PICKUP_LIFT_POSITION : IntakeConstants.RAISED_LIFT_POSITION);
-    }
-
     public double getLiftPosition() {
         return liftPosition;
     }
 
-    public void setPower(double power) {
-        this.power = power;
-        intakeMotor.setPower(power);
-        feedMotor.setPower(power);
+    /** Sets the intake motor (03) and the feed / channel motor (02); positive moves balls inward. */
+    public void setPowers(double intakePower, double feedPower) {
+        this.intakePower = intakePower;
+        this.feedPower = feedPower;
+        intakeMotor.setPower(intakePower);
+        feedMotor.setPower(feedPower);
     }
 
-    public double getPower() {
-        return power;
+    public double getIntakePower() {
+        return intakePower;
+    }
+
+    public double getFeedPower() {
+        return feedPower;
     }
 
     public void stop() {
-        setPower(0);
+        setPowers(0, 0);
     }
 
-    private void setLiftPosition(double position) {
+    public void setLiftPosition(double position) {
         liftPosition = Range.clip(position, IntakeConstants.LIFT_MIN, IntakeConstants.LIFT_MAX);
         liftServo.setPosition(liftPosition);
         mirroredLiftServo.setPosition(1.0 - liftPosition);

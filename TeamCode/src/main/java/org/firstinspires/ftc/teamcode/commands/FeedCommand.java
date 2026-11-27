@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.commands;
 
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.subsystems.gate.Gate;
 import org.firstinspires.ftc.teamcode.subsystems.gate.GateConstants;
@@ -16,7 +15,6 @@ public final class FeedCommand extends CommandBase {
     private final Gate gate;
     private final Gamepad gamepad;
     private final DoubleSupplier runtime;
-    private double firePower = IntakeConstants.INITIAL_FEED_POWER;
     private double fireStartTime;
     private boolean wasFiring;
     private boolean wasIntaking;
@@ -40,9 +38,6 @@ public final class FeedCommand extends CommandBase {
         double now = runtime.getAsDouble();
         boolean firing = gamepad.right_trigger > IntakeConstants.TRIGGER_DEADZONE;
         boolean intaking = gamepad.left_trigger > IntakeConstants.TRIGGER_DEADZONE;
-        if (intaking != wasIntaking) {
-            intake.setPickupPosition(intaking);
-        }
         boolean firePressed = firing && !wasFiring;
         if (firePressed) {
             fireStartTime = now;
@@ -53,38 +48,25 @@ public final class FeedCommand extends CommandBase {
             gate.setOpen(false);
         }
 
-        double power = 0;
+        // 1 runs both motors inward, -1 reverses them, 0 stops them.
+        int direction = 0;
         if (firing) {
             if (now - fireStartTime >= GateConstants.PRE_OPEN_SECONDS) {
-                power = firePower;
+                direction = 1;
             }
         } else if (intaking) {
-            power = firePower;
+            direction = 1;
         } else if (gamepad.left_bumper) {
-            power = -firePower;
+            direction = -1;
         }
-        intake.setPower(power);
+        intake.setPowers(direction * IntakeConstants.INTAKE_MOTOR_POWER,
+                direction * IntakeConstants.FEED_MOTOR_POWER);
         wasFiring = firing;
         wasIntaking = intaking;
-    }
-
-    public void decreaseFirePower() {
-        firePower = Range.clip(firePower - IntakeConstants.FEED_POWER_STEP,
-                IntakeConstants.MIN_FEED_POWER, IntakeConstants.MAX_FEED_POWER);
-    }
-
-    public void increaseFirePower() {
-        firePower = Range.clip(firePower + IntakeConstants.FEED_POWER_STEP,
-                IntakeConstants.MIN_FEED_POWER, IntakeConstants.MAX_FEED_POWER);
-    }
-
-    public double getFirePower() {
-        return firePower;
     }
 
     @Override
     public void end(boolean interrupted) {
         intake.stop();
-        intake.setPickupPosition(false);
     }
 }

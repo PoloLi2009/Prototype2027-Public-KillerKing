@@ -21,7 +21,8 @@ public final class TurretAimCommand extends CommandBase {
     private double targetY = TurretConstants.LOW_TARGET_Y_INCHES;
     private double targetDistanceCm = Double.NaN;
     private double relativeTargetDegrees;
-    private boolean targetReachable;
+    private boolean targetReachable = true;
+    private boolean hasPose;
 
     public TurretAimCommand(Supplier<Pose2D> poseSource, BooleanSupplier blueAlliance, Turret turret) {
         this.poseSource = poseSource;
@@ -34,6 +35,11 @@ public final class TurretAimCommand extends CommandBase {
         enabled = !enabled;
     }
 
+    /** Sets aim on or off regardless of the default; disabled aim re-centers the turret. */
+    public void setAimEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     @Override
     public void execute() {
         if (!enabled && turret.getOffsetDegrees() != 0.0) {
@@ -41,6 +47,7 @@ public final class TurretAimCommand extends CommandBase {
         }
 
         Pose2D pose = poseSource.get();
+        hasPose = pose != null;
         if (pose == null) {
             targetDistanceCm = Double.NaN;
             return;
@@ -57,6 +64,7 @@ public final class TurretAimCommand extends CommandBase {
         targetDistanceCm = DistanceUnit.CM.fromInches(Math.hypot(deltaX, deltaY));
 
         if (!enabled) {
+            targetReachable = true;
             return;
         }
 
@@ -69,6 +77,14 @@ public final class TurretAimCommand extends CommandBase {
 
     public double getTargetDistanceCm() {
         return targetDistanceCm;
+    }
+
+    /**
+     * True while aiming is on, there is a pose, and the target lies in the turret's dead zone: outside
+     * the +/- MAX_OFFSET_DEGREES travel, so the turret stops at its limit instead of on the target.
+     */
+    public boolean isInDeadZone() {
+        return enabled && hasPose && !targetReachable;
     }
 
     public void addTelemetry(Telemetry telemetry) {

@@ -23,6 +23,13 @@ public final class DriveConstants {
 
     public static final double JOYSTICK_DEADZONE = 0.05;
 
+    // TeleOp driver forward at START as a field heading: away from the own alliance wall (red +X,
+    // blue -X). The TeleOp subtracts the Pinpoint start heading to get it relative to the robot, so
+    // the robot must start at that heading. (With the old 180 deg start this gave red 180 = robot
+    // rear and blue 0 = robot front.)
+    public static final double RED_DRIVER_FORWARD_FIELD_DEGREES = 0.0;
+    public static final double BLUE_DRIVER_FORWARD_FIELD_DEGREES = 180.0;
+
     // Strafe yaw compensation, shared by the TeleOp Drive and Pedro (CompensatedMecanum). The front
     // wheels' share of every strafe command is multiplied by this: below 1.0 they push less, which
     // cancels the yaw this chassis picks up when the front out-pushes the rear. 1.0 = no change.

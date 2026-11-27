@@ -1,0 +1,1111 @@
+{
+  "version": "2.0.0",
+  "timestamp": "2026-11-27T05:30:15Z",
+  "startPoint": {
+    "x": 54.3656,
+    "y": 9.439,
+    "headingDeg": 270.0
+  },
+  "lines": [
+    {
+      "id": "kk30-01",
+      "color": "#15887e",
+      "name": "01 Garden / 0.35 s",
+      "waitBeforeMs": 2110,
+      "waitAfterMs": 350,
+      "waitBeforeName": "Start volley (nominal)",
+      "waitAfterName": "Garden pickup",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 6.9632,
+        "y": 9.9654
+      },
+      "controlPoints": [
+        {
+          "x": 37.7001,
+          "y": 12.3667
+        },
+        {
+          "x": 7.6473,
+          "y": 26.5441
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 270.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-02",
+      "color": "#c36330",
+      "name": "01 Back off",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 6.9632,
+        "y": 11.933904
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 270.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-03",
+      "color": "#307fb7",
+      "name": "01 Return / 0.35 s",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 350,
+      "waitBeforeName": "",
+      "waitAfterName": "Garden pickup",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 6.9632,
+        "y": 9.9654
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 270.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-04",
+      "color": "#a36d14",
+      "name": "02 Leave Garden",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 30.5,
+        "y": 42.0
+      },
+      "controlPoints": [
+        {
+          "x": 25.0,
+          "y": 10.0
+        },
+        {
+          "x": 30.5,
+          "y": 22.0
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 270.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-05",
+      "color": "#168d83",
+      "name": "02 Turn in open lane",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 30.5,
+        "y": 98.0
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "linear",
+        "degrees": 90.0,
+        "startDeg": 270.0,
+        "endDeg": 90.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-06",
+      "color": "#59a14f",
+      "name": "02 Garden shot",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 1220,
+      "waitBeforeName": "",
+      "waitAfterName": "Garden volley",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 46.5,
+        "y": 121.8
+      },
+      "controlPoints": [
+        {
+          "x": 30.5,
+          "y": 110.0
+        },
+        {
+          "x": 46.5,
+          "y": 114.0
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 90.0,
+        "startDeg": 90.0,
+        "endDeg": 90.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-07",
+      "color": "#9760a2",
+      "name": "03 Far flower contact",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 820,
+      "waitBeforeName": "",
+      "waitAfterName": "Far FLOWER contact and pickup",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 46.51,
+        "y": 124.46
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 90.0,
+        "startDeg": 90.0,
+        "endDeg": 90.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-08",
+      "color": "#d1495b",
+      "name": "04 Far shot",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 1220,
+      "waitBeforeName": "",
+      "waitAfterName": "Far volley and scoop up",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 34.7,
+        "y": 122.7
+      },
+      "controlPoints": [
+        {
+          "x": 46.51,
+          "y": 116.0
+        },
+        {
+          "x": 40.0,
+          "y": 121.0
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 90.0,
+        "startDeg": 90.0,
+        "endDeg": 90.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-09",
+      "color": "#6c757d",
+      "name": "05 Turn away from Far flower",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 23.5,
+        "y": 122.0
+      },
+      "controlPoints": [
+        {
+          "x": 30.0,
+          "y": 123.0
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 10.0,
+        "startDeg": 90.0,
+        "endDeg": 10.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-10",
+      "color": "#e07a5f",
+      "name": "05 Face preloads",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 12.0,
+        "y": 115.0
+      },
+      "controlPoints": [
+        {
+          "x": 19.0,
+          "y": 122.0
+        },
+        {
+          "x": 14.0,
+          "y": 118.0
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": -90.0,
+        "startDeg": 10.0,
+        "endDeg": -90.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-11",
+      "color": "#3d405b",
+      "name": "05 Partner preloads",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 450,
+      "waitBeforeName": "",
+      "waitAfterName": "Partner pickup",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 8.0,
+        "y": 103.4
+      },
+      "controlPoints": [
+        {
+          "x": 9.0,
+          "y": 112.0
+        },
+        {
+          "x": 8.0,
+          "y": 107.0
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 270.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-12",
+      "color": "#81b29a",
+      "name": "06 Partner shot",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 1220,
+      "waitBeforeName": "",
+      "waitAfterName": "Partner volley",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 33.2,
+        "y": 26.8
+      },
+      "controlPoints": [
+        {
+          "x": 8.0,
+          "y": 119.0
+        },
+        {
+          "x": 44.0,
+          "y": 102.0
+        },
+        {
+          "x": 34.0,
+          "y": 103.0
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 270.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-13",
+      "color": "#f2cc8f",
+      "name": "07 Side flower alignment",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 22.0,
+        "y": 46.6183
+      },
+      "controlPoints": [
+        {
+          "x": 31.0,
+          "y": 39.0
+        },
+        {
+          "x": 27.0,
+          "y": 46.6183
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 180.0,
+        "startDeg": 270.0,
+        "endDeg": 180.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-14",
+      "color": "#5e548e",
+      "name": "07 Side flower contact",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 820,
+      "waitBeforeName": "",
+      "waitAfterName": "Side FLOWER contact and pickup",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 16.15,
+        "y": 46.6183
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 180.0,
+        "startDeg": 180.0,
+        "endDeg": 180.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-15",
+      "color": "#15887e",
+      "name": "08 Side shot",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 1220,
+      "waitBeforeName": "",
+      "waitAfterName": "Side volley and scoop up",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 27.7,
+        "y": 32.1
+      },
+      "controlPoints": [
+        {
+          "x": 28.0,
+          "y": 46.6183
+        },
+        {
+          "x": 26.0,
+          "y": 36.0
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 180.0,
+        "startDeg": 180.0,
+        "endDeg": 180.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-16",
+      "color": "#15887e",
+      "name": "09 Turn rear toward partner",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 19.0,
+        "y": 56.0
+      },
+      "controlPoints": [
+        {
+          "x": 30.0,
+          "y": 44.0
+        },
+        {
+          "x": 24.0,
+          "y": 52.0
+        }
+      ],
+      "heading": {
+        "type": "linear",
+        "degrees": 270.0,
+        "startDeg": 180.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-17",
+      "color": "#c36330",
+      "name": "09 Align rear face",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 60,
+      "waitBeforeName": "",
+      "waitAfterName": "Confirm square",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 8.0,
+        "y": 64.0
+      },
+      "controlPoints": [
+        {
+          "x": 14.0,
+          "y": 59.0
+        },
+        {
+          "x": 8.0,
+          "y": 60.0
+        }
+      ],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 270.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "kk30-18",
+      "color": "#307fb7",
+      "name": "09 Park push",
+      "waitBeforeMs": 0,
+      "waitAfterMs": 0,
+      "waitBeforeName": "",
+      "waitAfterName": "",
+      "kind": "atomic",
+      "endPoint": {
+        "x": 8.0,
+        "y": 88.5
+      },
+      "controlPoints": [],
+      "heading": {
+        "type": "constant",
+        "degrees": 270.0,
+        "startDeg": 270.0,
+        "endDeg": 270.0,
+        "reverse": false,
+        "piecewiseHeading": {
+          "segments": [
+            {
+              "startProgress": 0,
+              "endProgress": 1,
+              "interpolationType": "linear",
+              "reversed": false,
+              "parameters": {
+                "startDeg": 0,
+                "endDeg": 0
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "shapes": [
+    {
+      "id": "biobuzz-red-hive",
+      "name": "Red HIVE",
+      "vertices": [
+        {
+          "x": 46,
+          "y": 50
+        },
+        {
+          "x": 48.599999999999994,
+          "y": 50
+        },
+        {
+          "x": 48.599999999999994,
+          "y": 91.4
+        },
+        {
+          "x": 46,
+          "y": 91.4
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-blue-hive",
+      "name": "Blue HIVE",
+      "vertices": [
+        {
+          "x": 96.5,
+          "y": 91.4
+        },
+        {
+          "x": 93.9,
+          "y": 91.4
+        },
+        {
+          "x": 93.9,
+          "y": 50
+        },
+        {
+          "x": 96.5,
+          "y": 50
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "biobuzz-flower-left",
+      "name": "Red Alliance FLOWER",
+      "vertices": [
+        {
+          "x": 0,
+          "y": 50.35
+        },
+        {
+          "x": 2.0999999999999943,
+          "y": 50.35
+        },
+        {
+          "x": 3.8000000000000114,
+          "y": 47
+        },
+        {
+          "x": 2.0999999999999943,
+          "y": 43.65
+        },
+        {
+          "x": 0,
+          "y": 43.65
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-flower-right",
+      "name": "Blue Alliance FLOWER",
+      "vertices": [
+        {
+          "x": 141.5,
+          "y": 98.1
+        },
+        {
+          "x": 139.4,
+          "y": 98.1
+        },
+        {
+          "x": 137.7,
+          "y": 94.75
+        },
+        {
+          "x": 139.4,
+          "y": 91.4
+        },
+        {
+          "x": 141.5,
+          "y": 91.4
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "biobuzz-flower-top",
+      "name": "Scoring-Side FLOWER",
+      "vertices": [
+        {
+          "x": 43.400000000000006,
+          "y": 141.5
+        },
+        {
+          "x": 50.099999999999994,
+          "y": 141.5
+        },
+        {
+          "x": 50.099999999999994,
+          "y": 139.4
+        },
+        {
+          "x": 46.75,
+          "y": 137.7
+        },
+        {
+          "x": 43.400000000000006,
+          "y": 139.4
+        }
+      ],
+      "color": "#dc2626",
+      "fillColor": "#ff6b6b"
+    },
+    {
+      "id": "biobuzz-flower-bottom",
+      "name": "Audience-Side FLOWER",
+      "vertices": [
+        {
+          "x": 91.15,
+          "y": 0
+        },
+        {
+          "x": 97.8,
+          "y": 0
+        },
+        {
+          "x": 97.8,
+          "y": 2.1
+        },
+        {
+          "x": 94.5,
+          "y": 3.8
+        },
+        {
+          "x": 91.15,
+          "y": 2.1
+        }
+      ],
+      "color": "#2563eb",
+      "fillColor": "#60a5fa"
+    },
+    {
+      "id": "partner-robot",
+      "name": "Partner robot (16 x 16, before the push)",
+      "vertices": [
+        {
+          "x": 0,
+          "y": 78.33
+        },
+        {
+          "x": 16,
+          "y": 78.33
+        },
+        {
+          "x": 16,
+          "y": 94.33
+        },
+        {
+          "x": 0,
+          "y": 94.33
+        }
+      ],
+      "color": "#8293aa",
+      "fillColor": "#8293aa"
+    }
+  ],
+  "sequence": [
+    {
+      "kind": "path",
+      "lineId": "kk30-01"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-02"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-03"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-04"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-05"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-06"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-07"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-08"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-09"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-10"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-11"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-12"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-13"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-14"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-15"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-16"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-17"
+    },
+    {
+      "kind": "path",
+      "lineId": "kk30-18"
+    }
+  ],
+  "fieldPoints": [
+    {
+      "x": 0,
+      "y": 94.33,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 11,
+      "y": 94.33,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 11,
+      "y": 117.92,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 0,
+      "y": 117.92,
+      "color": "#ae9581",
+      "radius": 0.5,
+      "opacity": 0.8
+    },
+    {
+      "x": 1.4,
+      "y": 95.73,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 4.2,
+      "y": 95.73,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 7.0,
+      "y": 95.73,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 9.8,
+      "y": 95.73,
+      "color": "#d7a52f",
+      "radius": 1.4,
+      "opacity": 0.96
+    },
+    {
+      "x": 58.75,
+      "y": 58.75,
+      "color": "#7c3aed",
+      "radius": 1.2,
+      "opacity": 0.95
+    },
+    {
+      "x": 58.75,
+      "y": 82.75,
+      "color": "#7c3aed",
+      "radius": 1.2,
+      "opacity": 0.95
+    }
+  ],
+  "robot": {
+    "forwardVelocity": 75,
+    "strafeVelocity": 65,
+    "aVelocity": 3.141592653589793,
+    "kFriction": 0.1,
+    "rLength": 18.878,
+    "rWidth": 13.7087,
+    "safetyMargin": 1,
+    "maxAcceleration": 50,
+    "maxDeceleration": 50
+  },
+  "activePaths": []
+}

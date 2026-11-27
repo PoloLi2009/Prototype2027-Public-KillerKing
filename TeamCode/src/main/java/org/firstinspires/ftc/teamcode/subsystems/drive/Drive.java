@@ -16,6 +16,7 @@ public final class Drive extends SubsystemBase {
     private final DcMotorEx frontRight;
     private final DcMotorEx backRight;
     private final IMU imu;
+    private double driverForwardRadians;
 
     public Drive(HardwareMap hardwareMap) {
         frontLeft = configureMotor(hardwareMap, DriveConstants.FRONT_LEFT_MOTOR_NAME,
@@ -34,12 +35,23 @@ public final class Drive extends SubsystemBase {
         resetYaw();
     }
 
+    /** Makes the robot's current heading the driver's forward direction. */
     public void resetYaw() {
+        resetYaw(0);
+    }
+
+    /**
+     * Resets the field-centric reference so the driver's forward points {@code driverForwardDegrees}
+     * counter-clockwise from the robot's current heading. Only the Control Hub IMU used for driving
+     * is reset; the Pinpoint pose used for localization is not touched.
+     */
+    public void resetYaw(double driverForwardDegrees) {
         imu.resetYaw();
+        driverForwardRadians = Math.toRadians(driverForwardDegrees);
     }
 
     public void driveFieldCentric(double forward, double strafe, double turn) {
-        double yaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+        double yaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS) - driverForwardRadians;
         double cos = Math.cos(yaw);
         double sin = Math.sin(yaw);
         double robotStrafe = strafe * cos + forward * sin;

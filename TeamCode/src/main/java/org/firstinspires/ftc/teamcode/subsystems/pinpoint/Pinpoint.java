@@ -15,13 +15,21 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 public final class Pinpoint extends SubsystemBase {
     private final GoBildaPinpointDriver driver;
+    private final Pose2D startPose;
     private boolean startPoseSet;
     private Pose2D pose;
     private Pose2d rawOdometry;
-    private Translation2d fieldOffset = new Translation2d();
+    private int rewrites;
     private String status = "未配置";
 
+    /** Starts at {@link PinpointConstants#START_POSE} (field center). */
     public Pinpoint(HardwareMap hardwareMap) {
+        this(hardwareMap, PinpointConstants.START_POSE);
+    }
+
+    /** Resets the Pinpoint and writes {@code startPose} once it first reports READY. */
+    public Pinpoint(HardwareMap hardwareMap, Pose2D startPose) {
+        this.startPose = startPose;
         GoBildaPinpointDriver configuredDriver = null;
         try {
             GoBildaPinpointDriver device = hardwareMap.tryGet(
@@ -59,10 +67,10 @@ public final class Pinpoint extends SubsystemBase {
         }
 
         if (!startPoseSet) {
-            driver.setPosition(PinpointConstants.START_POSE);
+            driver.setPosition(startPose);
             startPoseSet = true;
             // The bulk read above still contains the pose from before this write.
-            updatePose(PinpointConstants.START_POSE);
+            updatePose(startPose);
             return;
         }
 
@@ -82,21 +90,31 @@ public final class Pinpoint extends SubsystemBase {
         rawOdometry = new Pose2d(measuredPose.getX(DistanceUnit.METER),
                 measuredPose.getY(DistanceUnit.METER),
                 new Rotation2d(measuredPose.getHeading(AngleUnit.RADIANS)));
-        updateFieldPose();
+        pose = measuredPose;
     }
 
-    /** Applies a field translation while retaining the measured chassis heading. */
-    public void setFieldOffset(Translation2d offset) {
-        if (rawOdometry != null) {
-            fieldOffset = offset;
-            updateFieldPose();
+    /**
+     * Rewrites the Pinpoint device with the current pose corrected by a vision alignment: the current
+     * position is rotated by {@code rotation} and shifted by {@code offset}, the heading is turned by
+     * {@code rotation}. From then on the device itself reports the corrected pose, so there is no
+     * separate field offset. Callers must drop pose history from before the rewrite.
+     */
+    public void rewritePose(Rotation2d rotation, Translation2d offset) {
+        if (driver == null || rawOdometry == null) {
+            return;
         }
+        Translation2d position = rawOdometry.getTranslation().rotateBy(rotation).plus(offset);
+        Pose2D corrected = new Pose2D(DistanceUnit.METER, position.getX(), position.getY(),
+                AngleUnit.RADIANS, rawOdometry.getRotation().plus(rotation).getRadians());
+        driver.setPosition(corrected);
+        rewrites++;
+        // This loop's bulk read still holds the old pose; use the written one until the next read.
+        updatePose(corrected);
     }
 
-    private void updateFieldPose() {
-        pose = new Pose2D(DistanceUnit.METER, rawOdometry.getX() + fieldOffset.getX(),
-                rawOdometry.getY() + fieldOffset.getY(), AngleUnit.RADIANS,
-                rawOdometry.getRotation().getRadians());
+    /** How many times vision has rewritten the Pinpoint pose since this OpMode started. */
+    public int getRewriteCount() {
+        return rewrites;
     }
 
     public Pose2d getRawOdometry() {

@@ -13,16 +13,19 @@ public final class IntakeConstants {
     public static final DcMotor.ZeroPowerBehavior ZERO_POWER_BEHAVIOR = DcMotor.ZeroPowerBehavior.BRAKE;
     public static final DcMotor.Direction FEED_MOTOR_DIRECTION = DcMotor.Direction.REVERSE;
 
-    public static final double PICKUP_LIFT_POSITION = 0.50;
-    public static final double RAISED_LIFT_POSITION = 0.70;
+    // The intake stays at this one height in every OpMode: no raised / pickup positions any more
+    // (2026-11-27; before: raised 0.70, pickup 0.53). Larger = higher. The TeleOp D-pad can still
+    // nudge it by LIFT_STEP.
+    public static final double LIFT_POSITION = 0.56;
     public static final double LIFT_STEP = 0.1;
     public static final double LIFT_MIN = 0.2;
     public static final double LIFT_MAX = 0.8;
 
-    // The same power magnitude is used for intake, firing, and reverse.
+    // Motor power magnitudes for intake, firing and reverse. FEED_MOTOR_POWER is the feed / channel
+    // motor in the TeleOp (intake, firing, reverse) and in autonomous pickups.
+    public static final double INTAKE_MOTOR_POWER = 1.0;
+    public static final double FEED_MOTOR_POWER = 0.8;
+    // Feed / channel motor while the stable autonomous routines fire a volley (slower than TeleOp).
+    public static final double AUTO_FIRE_FEED_MOTOR_POWER = 0.6;
     public static final double TRIGGER_DEADZONE = 0.01;
-    public static final double INITIAL_FEED_POWER = 1.0;
-    public static final double FEED_POWER_STEP = 0.1;
-    public static final double MIN_FEED_POWER = 0.0;
-    public static final double MAX_FEED_POWER = 1.0;
 }

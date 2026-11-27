@@ -27,6 +27,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.commands.ShooterCommand;
 import org.firstinspires.ftc.teamcode.commands.TurretAimCommand;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.flowerscoop.FlowerScoop;
 import org.firstinspires.ftc.teamcode.subsystems.gate.Gate;
 import org.firstinspires.ftc.teamcode.subsystems.gate.GateConstants;
 import org.firstinspires.ftc.teamcode.subsystems.intake.Intake;
@@ -45,10 +46,11 @@ import java.util.function.Supplier;
  * EXPERIMENTAL red three-tip autonomous for Killer King: the fixed route of {@link Red3TipsAuto}
  * (the stable version, no vision) plus a Limelight tip check, a far recovery and time gates.
  *
- * <p>Pedro drives the route in {@link Red3Tips_1_0}. The turret aims with the TeleOp's
+ * <p>Pedro drives the route in {@link Red3TipsVisionRoute}. The turret aims with the TeleOp's
  * {@link TurretAimCommand} (same red targets and travel limit), fed by the Pedro pose, so it
- * pre-aims during each approach. Pickups run the intake with the gate closed; each volley waits for
- * the flywheel and turret, opens the gate, waits the TeleOp pre-open time, then feeds.
+ * pre-aims during each approach. Pickups run the intake with the gate closed, and the FLOWER
+ * pickups (03, 07) also lower the flower scoop; each volley waits for the flywheel and turret, opens
+ * the gate, waits the TeleOp pre-open time, then feeds.
  *
  * <p>Tips: the 4 preloads, shot from the start before 01, tip the CELL that starts upward (aimed at
  * (60, 60) from there); 02 + 04 at the far spot fill the CELL that came up (60, 84) for tip 2; 06 +
@@ -76,9 +78,6 @@ public class Red3TipsVisionAuto extends CommandOpMode {
     static final double RPM_TOLERANCE = 100;
     static final long RPM_STABLE_MS = 100;
 
-    // Same power the TeleOp uses for intake, feeding and firing.
-    static final double COLLECT_POWER = IntakeConstants.INITIAL_FEED_POWER;
-    static final double FEED_POWER = IntakeConstants.INITIAL_FEED_POWER;
     static final long GATE_PRE_OPEN_MS = Math.round(GateConstants.PRE_OPEN_SECONDS * 1000);
     static final long VOLLEY_MS = 900;
     static final long SHOT_READY_TIMEOUT_MS = 1500;
@@ -90,9 +89,8 @@ public class Red3TipsVisionAuto extends CommandOpMode {
     static final long PATH_TIMEOUT_MS = 5000;
     static final long BAD_POSE_ABORT_MS = 250;
 
-    // 06 arrives at 90 deg; 07 turns to 180 deg over its first 60% instead of snapping at the start,
-    // so the intake is square to the FLOWER before it reaches it.
-    static final double SIDE_FLOWER_START_HEADING_DEGREES = 90;
+    // 07 starts from the robot's actual heading: 180 deg after 06 (no turn, as exported), 90 deg after
+    // 06R. It reaches 180 deg by this fraction of the path, so the intake is square to the FLOWER.
     static final double SIDE_FLOWER_SQUARE_BY = 0.6;
 
     // TurretAimCommand works in the TeleOp Pinpoint frame (field center 72 in); Pedro's is 70.75 in.
@@ -115,7 +113,7 @@ public class Red3TipsVisionAuto extends CommandOpMode {
     static final double PARK_BASE_SECONDS = 1.0;                   // start-up and settling
     static final double PARK_SPEED_IN_PER_S = 35.0;                // conservative average speed
 
-    private final Red3Tips_1_0 route = new Red3Tips_1_0();
+    private final Red3TipsVisionRoute route = new Red3TipsVisionRoute();
     private final Pose parkPose = route.path909Park().endPose();
     private final HiveTipWatcher tipWatcher = new HiveTipWatcher();
     private Command routine;
@@ -125,6 +123,7 @@ public class Red3TipsVisionAuto extends CommandOpMode {
     private Follower follower;
     private Intake intake;
     private Gate gate;
+    private FlowerScoop flowerScoop;
     private Shooter shooter;
     private Turret turret;
     private LimelightVision vision;
@@ -144,6 +143,7 @@ public class Red3TipsVisionAuto extends CommandOpMode {
         follower = Constants.create(hardwareMap);
         intake = new Intake(hardwareMap);
         gate = new Gate(hardwareMap);
+        flowerScoop = new FlowerScoop(hardwareMap);   // raised at INIT, as in the TeleOp
         shooter = new Shooter(hardwareMap);
         turret = new Turret(hardwareMap);
         vision = new LimelightVision(hardwareMap, LimelightVision.Alliance.RED);
@@ -184,7 +184,8 @@ public class Red3TipsVisionAuto extends CommandOpMode {
             follower.setPose(route.start);
             clock.reset();
             shooter.setTargetRpm(PRELOAD_SHOT_RPM);
-            turretAim.toggleAim();                       // enable aiming for the whole routine
+            // Set, not toggled: TurretAimCommand's default changed to on, and a toggle then turned it off.
+            turretAim.setAimEnabled(true);
             routine = autoRoutine();
             schedule(shooterCommand, turretAim, routine);
             while (opModeIsActive()
@@ -192,9 +193,10 @@ public class Red3TipsVisionAuto extends CommandOpMode {
                 run();
             }
         } finally {
-            CommandScheduler.getInstance().cancelAll();
+            cancelCommands();
             if (intake != null) intake.stop();
             if (gate != null) gate.setOpen(false);
+            if (flowerScoop != null) flowerScoop.raise();
             if (shooter != null) shooter.stop();
             if (follower != null) stopDrive();
             if (vision != null) vision.stop();
@@ -213,7 +215,7 @@ public class Red3TipsVisionAuto extends CommandOpMode {
                 followPath("02 Garden load / far", route.path202Gardenloadfar(), 0),
                 shoot("02 Garden load / far"),
 
-                collect(followPath("03 Far flower", route.path303Farflower(), FLOWER_DWELL_MS)),
+                collectFromFlower(followPath("03 Far flower", route.path303Farflower(), FLOWER_DWELL_MS)),
                 followPath("04 Flower load / far", route.path404Flowerloadfar(), 0),
                 shootAndWatchTip("04 Flower load / far"),
 
@@ -227,7 +229,7 @@ public class Red3TipsVisionAuto extends CommandOpMode {
         return whenTimeLeft("06 near shot", NEAR_SHOT_LEG_MIN_SECONDS,
                 new SequentialCommandGroup(
                         setRpm(NEAR_SHOT_RPM),
-                        followPath("06 Partner avoid / near", route.path606Partneravoid(), 0),
+                        followPath("06 Partner avoid / near", route.path606Partneravoidnear(), 0),
                         shoot("06 Partner load / near"),
                         sideFlowerLeg()),
                 park("09P Partner -> park", this::parkFromHere));
@@ -256,7 +258,7 @@ public class Red3TipsVisionAuto extends CommandOpMode {
     private Command sideFlowerLeg() {
         return whenTimeLeft("07 side flower", SIDE_FLOWER_MIN_SECONDS,
                 new SequentialCommandGroup(
-                        collect(followPath("07 Side flower", squareToFlower(route.path707Sideflower()), FLOWER_DWELL_MS)),
+                        collectFromFlower(followPath("07 Side flower", this::sideFlowerPath, FLOWER_DWELL_MS)),
                         followPath("08 Flower load / near", route.path808Flowerloadnear(), 0),
                         whenTimeLeft("08 last volley", LAST_VOLLEY_MIN_SECONDS,
                                 shoot("08 Flower load / near"), new InstantCommand()),
@@ -310,7 +312,7 @@ public class Red3TipsVisionAuto extends CommandOpMode {
             if (badPoseSinceMs < 0) badPoseSinceMs = clock.milliseconds();
             if (clock.milliseconds() - badPoseSinceMs > BAD_POSE_ABORT_MS) {
                 RobotLog.ww("Red3TipsVision", "Stopped on %s: Pinpoint pose invalid", step);
-                CommandScheduler.getInstance().cancelAll();
+                cancelCommands();
             }
         } else {
             badPoseSinceMs = -1;
@@ -319,6 +321,15 @@ public class Red3TipsVisionAuto extends CommandOpMode {
         updateVision();
         checkParkDeadline();
         showTelemetry();
+    }
+
+    /**
+     * Cancels the commands this OpMode scheduled, running each end(). Not cancelAll(): FTCLib 2.1.1
+     * removes entries from the map it is iterating, which throws ConcurrentModificationException
+     * whenever two or more commands are scheduled (always the case here).
+     */
+    private void cancelCommands() {
+        CommandScheduler.getInstance().cancel(routine, watchdogPark, shooterCommand, turretAim);
     }
 
     /** Park watchdog: cut the routine and park from here once the time left only just covers it. */
@@ -361,9 +372,9 @@ public class Red3TipsVisionAuto extends CommandOpMode {
 
     // ---------------------------------------------------------------- heading adjustments
 
-    /** 07: start from 06's heading and face the FLOWER squarely before the intake reaches it. */
-    private static Path squareToFlower(Path path) {
-        return path.linear(Math.toRadians(SIDE_FLOWER_START_HEADING_DEGREES), Math.toRadians(180),
+    /** 07 from the current heading, square to the FLOWER (180 deg) before the intake reaches it. */
+    private Path sideFlowerPath() {
+        return route.path707Sideflower().linear(follower.pose().heading(), Math.toRadians(180),
                 SIDE_FLOWER_SQUARE_BY);
     }
 
@@ -378,29 +389,35 @@ public class Red3TipsVisionAuto extends CommandOpMode {
         return Paths.line(start, far).linear(start, far);
     }
 
-    /** 06R: far shot spot to 06's near shot spot, so 07-09 run unchanged from there. */
+    /**
+     * 06R: far shot spot to 06's near shot spot, so 07-09 run from there. It keeps the far spot's
+     * heading (90 deg): turning to 06's 180 deg on this line would sweep the robot into the HIVE.
+     * 07 then turns to the FLOWER.
+     */
     private Path farToNearShot() {
         Pose start = follower.pose();
-        Pose near = route.path606Partneravoid().endPose();
-        return Paths.line(start, near).linear(start, near);
+        Pose near = route.path606Partneravoidnear().endPose();
+        return Paths.line(start, near).constant(start);
     }
 
     /**
      * Early, recovery and watchdog parks, from wherever the robot is. Below the field middle it
      * reuses 09's control points, which swing out past the Side FLOWER before running up the wall;
-     * from the far half (the park pose is there) it is a straight line.
+     * from the far half (the park pose is there) it is a straight line that keeps the current
+     * heading: 05 ends 7.7 in from the red wall at 270 deg, and turning to 09's 90 deg there would
+     * swing the robot into the wall (turning in place needs 11.7 in).
      */
     private Path parkFromHere() {
         Pose start = follower.pose();
         Path park09 = route.path909Park();
-        if (start.y() < Red3Tips_1_0.FIELD_SIZE_IN / 2 && park09.curve instanceof BezierCurve) {
+        if (start.y() < Red3TipsVisionRoute.FIELD_SIZE_IN / 2 && park09.curve instanceof BezierCurve) {
             List<Vector2D> points = ((BezierCurve) park09.curve).getControlPoints();
             Pose[] through = new Pose[points.size()];
             through[0] = start;
             for (int i = 1; i < points.size(); i++) through[i] = points.get(i).toPose(0);
             return Paths.curve(through).linear(start, parkPose);
         }
-        return Paths.line(start, parkPose).linear(start, parkPose);
+        return Paths.line(start, parkPose).constant(start);
     }
 
     // ---------------------------------------------------------------- building blocks
@@ -409,14 +426,27 @@ public class Red3TipsVisionAuto extends CommandOpMode {
         return new InstantCommand(() -> shooter.setTargetRpm(rpm));
     }
 
-    /** Runs the intake (gate closed) until {@code drive} finishes, like holding LT in the TeleOp. */
+    /**
+     * Runs the intake (gate closed; the intake stays at its one height, IntakeConstants.LIFT_POSITION)
+     * until {@code drive} finishes, then stops it, like holding LT in the TeleOp.
+     */
     private Command collect(Command drive) {
         return new ParallelDeadlineGroup(drive, new StartEndCommand(
                 () -> {
                     gate.setOpen(false);
-                    intake.setPower(COLLECT_POWER);
+                    intake.setPowers(IntakeConstants.INTAKE_MOTOR_POWER, IntakeConstants.FEED_MOTOR_POWER);
                 },
                 intake::stop, intake, gate));
+    }
+
+    /**
+     * {@link #collect} at a FLOWER: the flower scoop is lowered for the whole pickup and raised when it
+     * ends. StartEndCommand raises it on interruption too (a time gate or the park watchdog), so it
+     * never stays down on the way to a shot or to park.
+     */
+    private Command collectFromFlower(Command drive) {
+        return new ParallelDeadlineGroup(collect(drive),
+                new StartEndCommand(flowerScoop::lower, flowerScoop::raise, flowerScoop));
     }
 
     /** Follows {@code path}, then waits {@code dwellMs} at the endpoint. */
@@ -531,7 +561,7 @@ public class Red3TipsVisionAuto extends CommandOpMode {
                     phaseStartMs = now;
                 }
             } else if (phase == 1 && now - phaseStartMs >= GATE_PRE_OPEN_MS) {
-                intake.setPower(FEED_POWER);
+                intake.setPowers(IntakeConstants.INTAKE_MOTOR_POWER, IntakeConstants.FEED_MOTOR_POWER);
                 phase = 2;
                 phaseStartMs = now;
                 shotStatus = "feeding";
@@ -557,9 +587,9 @@ public class Red3TipsVisionAuto extends CommandOpMode {
     // ---------------------------------------------------------------- helpers
 
     private void stopScoring() {
-        if (scoringStopped) return;                           // toggleAim would turn aim back on
+        if (scoringStopped) return;
         scoringStopped = true;
-        if (turretAim.isScheduled()) turretAim.toggleAim();   // disabled aim re-centers the turret
+        turretAim.setAimEnabled(false);                       // disabled aim re-centers the turret
         shooterCommand.cancel();                              // ShooterCommand.end() stops the flywheel
     }
 
@@ -588,6 +618,8 @@ public class Red3TipsVisionAuto extends CommandOpMode {
         if (lastTimeout != null) telemetry.addData("Last path timeout", lastTimeout);
         telemetry.addData("Pose (in, deg)", "%.1f, %.1f, %.1f", pose.x(), pose.y(), Math.toDegrees(pose.heading()));
         telemetry.addData("Shot", shotStatus);
+        telemetry.addData("Flower scoop", "%s (%.2f)",
+                flowerScoop.isRaised() ? "raised" : "lowered", flowerScoop.getPosition());
         telemetry.addData("Plan", plan);
         telemetry.addData("04 tip check", tipCheck);
         double tilt = localization.getHiveTiltDegrees();

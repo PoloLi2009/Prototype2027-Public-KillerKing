@@ -19,7 +19,15 @@ public final class HiveLights extends SubsystemBase {
         turnOff();
     }
 
-    public void showDistance(Pose2d rawOdometry, boolean blueAlliance) {
+    /**
+     * Red (steady) while the turret target is in its dead zone; otherwise green inside the shooting
+     * distance range and red outside it.
+     */
+    public void showDistance(Pose2d rawOdometry, boolean blueAlliance, boolean turretDeadZone) {
+        if (turretDeadZone) {
+            setBoth(HiveLightsConstants.RED_POSITION);
+            return;
+        }
         double distanceCm = Double.NaN;
         if (rawOdometry != null) {
             double x = DistanceUnit.INCH.fromMeters(rawOdometry.getX());
