@@ -126,7 +126,7 @@ public abstract class KillerKingTeleOp extends CommandOpMode {
         vision.setDefaultCommand(visionReadCommand);
 
         drive.setDefaultCommand(new DriveCommand(drive, gamepad1));
-        feedCommand = new FeedCommand(intake, gate, gamepad1, this::getRuntime);
+        feedCommand = new FeedCommand(intake, gate, gamepad1, this::getRuntime, shooter::isReadyToFeed);
         intake.setDefaultCommand(feedCommand);
         turretAimCommand = new TurretAimCommand(visionReadCommand::getAimPose, vision::isBlueAlliance, turret);
         turret.setDefaultCommand(turretAimCommand);

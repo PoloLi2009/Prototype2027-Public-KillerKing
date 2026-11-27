@@ -25,6 +25,10 @@ public final class IntakeConstants {
     // motor in the TeleOp (intake, firing, reverse) and in autonomous pickups.
     public static final double INTAKE_MOTOR_POWER = 1.0;
     public static final double FEED_MOTOR_POWER = 0.8;
+    // Intake and feed / channel motors while the TeleOp fires (RT held, gate open), 2026-11-27 (user).
+    // Intake and reverse keep INTAKE_MOTOR_POWER / FEED_MOTOR_POWER.
+    public static final double FIRE_INTAKE_MOTOR_POWER = 0.6;
+    public static final double FIRE_FEED_MOTOR_POWER = 0.8;
     // Feed / channel motor while the stable autonomous routines fire a volley (slower than TeleOp).
     public static final double AUTO_FIRE_FEED_MOTOR_POWER = 0.6;
     public static final double TRIGGER_DEADZONE = 0.01;

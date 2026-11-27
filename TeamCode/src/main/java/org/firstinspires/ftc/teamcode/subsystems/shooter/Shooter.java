@@ -5,20 +5,20 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.shooter.ShooterConstants.Gain;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 
 public final class Shooter extends SubsystemBase {
     private final DcMotorEx encoderMotor;
     private final DcMotorEx followerMotor;
-    private final List<VoltageSensor> voltageSensors;
-    private double batteryVoltage = Double.NaN;   // filtered; NaN until the first valid reading
-    private double lastVoltageReadTime = Double.NEGATIVE_INFINITY;
-    private double voltageScale = 1.0;            // NOMINAL_VOLTAGE / batteryVoltage
+    private final List<VoltageSensor> voltageSensors;   // only read for the shot log, not for control
     private final EnumMap<Gain, Double> gains = new EnumMap<>(Gain.class);
     private Gain selectedGain = Gain.P;
     private double targetRpm = ShooterConstants.INITIAL_RPM;
@@ -33,8 +33,37 @@ public final class Shooter extends SubsystemBase {
     private double powerOverride = Double.NaN;
     private double integralPower;
     private boolean hasPreviousFeedbackSample;
+    private boolean readyToFeed;                  // |error| <= FEED_START_RPM (always in manual mode)
     private boolean manual;
     private double manualPower = ShooterConstants.INITIAL_MANUAL_POWER;
+
+    // Shot log: filtered RPM of the last SHOT_WINDOW_SECONDS, the shot in progress and the last volley.
+    private static final String LOG_TAG = "Shooter";
+    private static final int SHOT_WINDOW_SIZE = 32;
+    private final double[] windowTime = new double[SHOT_WINDOW_SIZE];
+    private final double[] windowRpm = new double[SHOT_WINDOW_SIZE];
+    private int windowCount;
+    private int windowNext;
+    private boolean inShot;
+    private double shotStartTime;
+    private double shotTargetRpm;
+    private double shotBeforeRpm;
+    private double shotLowestRpm;
+    private double lastShotTime = Double.NEGATIVE_INFINITY;
+    private int volleyNumber;
+    private int shotInVolley;
+    private final List<Shot> volley = new ArrayList<>();
+
+    private static final class Shot {
+        final double targetRpm, beforeRpm, dipRpm, sincePreviousS;
+
+        Shot(double targetRpm, double beforeRpm, double dipRpm, double sincePreviousS) {
+            this.targetRpm = targetRpm;
+            this.beforeRpm = beforeRpm;
+            this.dipRpm = dipRpm;
+            this.sincePreviousS = sincePreviousS;
+        }
+    }
 
     public Shooter(HardwareMap hardwareMap) {
         for (Gain gain : Gain.values()) {
@@ -54,7 +83,9 @@ public final class Shooter extends SubsystemBase {
         lastTime = now;
         resetFeedback();
         filterPrimed = false;                             // start the filter at the first reading
-        lastVoltageReadTime = Double.NEGATIVE_INFINITY;   // read the battery on the first update
+        readyToFeed = false;
+        inShot = false;
+        windowCount = 0;
     }
 
     public void adjustRpm(int direction) {
@@ -115,54 +146,103 @@ public final class Shooter extends SubsystemBase {
             filteredRpm = rawRpm;
             filterPrimed = true;
         }
-        updateBatteryVoltage(now);
+        double error = targetRpm - filteredRpm;
+        updateReadyToFeed(error);
+        detectShot(now);
         if (manual) {
             setPower(manualPower);
             return;
         }
-        double error = targetRpm - filteredRpm;
-        // Differentiate the measured RPM so a setpoint step does not kick the output.
+        // Plain PIDF. Differentiate the measured RPM so a setpoint step does not kick the output.
         double derivative = hasPreviousFeedbackSample ? (previousRpm - filteredRpm) / dt : 0;
         hasPreviousFeedbackSample = true;
-        // Everything up to the output is power at NOMINAL_VOLTAGE; voltageScale turns it into the power
-        // that gives the motors the same voltage from the battery as it is now.
         double basePower = gains.get(Gain.F) * targetRpm
                 + gains.get(Gain.P) * error + gains.get(Gain.D) * derivative;
-        double maxPower = ShooterConstants.MAX_POWER / voltageScale;
-        double minPower = ShooterConstants.MIN_POWER / voltageScale;
+        // The integral only grows while the output has room left (anti-windup).
         double integralStep = gains.get(Gain.I) * error * dt;
         double requestedPower = basePower + integralPower;
-        if (integralStep > 0 && requestedPower < maxPower) {
-            integralPower += Math.min(integralStep, maxPower - requestedPower);
-        } else if (integralStep < 0 && requestedPower > minPower) {
-            integralPower += Math.max(integralStep, minPower - requestedPower);
+        if (integralStep > 0 && requestedPower < ShooterConstants.MAX_POWER) {
+            integralPower += Math.min(integralStep, ShooterConstants.MAX_POWER - requestedPower);
+        } else if (integralStep < 0 && requestedPower > ShooterConstants.MIN_POWER) {
+            integralPower += Math.max(integralStep, ShooterConstants.MIN_POWER - requestedPower);
         }
         double outputRange = ShooterConstants.MAX_POWER - ShooterConstants.MIN_POWER;
         integralPower = Range.clip(integralPower, -outputRange, outputRange);
-        double output = Range.clip((basePower + integralPower) * voltageScale,
-                ShooterConstants.MIN_POWER, ShooterConstants.MAX_POWER);
+        double output = Range.clip(basePower + integralPower, ShooterConstants.MIN_POWER, ShooterConstants.MAX_POWER);
         setPower(Double.isNaN(powerOverride) ? output : powerOverride);
     }
 
+    private void updateReadyToFeed(double error) {
+        readyToFeed = manual || Math.abs(error) <= ShooterConstants.FEED_START_RPM;
+    }
+
     /**
-     * Reads the battery every VOLTAGE_READ_PERIOD_SECONDS (the lowest valid hub reading), filters it
-     * and updates voltageScale. Without a valid reading yet the scale stays 1 (no compensation).
+     * True while the filtered RPM is within FEED_START_RPM of the target: the TeleOp starts a volley
+     * only then (it does not pause once started). Always true in manual power mode; false until the
+     * first updateControl() after startControl().
      */
-    private void updateBatteryVoltage(double now) {
-        double sinceRead = now - lastVoltageReadTime;
-        if (sinceRead >= 0 && sinceRead < ShooterConstants.VOLTAGE_READ_PERIOD_SECONDS) return;
-        lastVoltageReadTime = now;
+    public boolean isReadyToFeed() {
+        return readyToFeed;
+    }
+
+    // ---------------------------------------------------------------- shot log
+
+    private void detectShot(double now) {
+        if (inShot) {
+            shotLowestRpm = Math.min(shotLowestRpm, filteredRpm);
+            if (filteredRpm < shotLowestRpm + ShooterConstants.SHOT_REARM_RPM) return;
+            finishShot();
+            windowCount = 0;                      // the RPM before this shot must not start another
+        }
+        windowTime[windowNext] = now;
+        windowRpm[windowNext] = filteredRpm;
+        windowNext = (windowNext + 1) % SHOT_WINDOW_SIZE;
+        windowCount = Math.min(windowCount + 1, SHOT_WINDOW_SIZE);
+        double highest = Double.NEGATIVE_INFINITY;
+        for (int k = 1; k <= windowCount; k++) {
+            int i = Math.floorMod(windowNext - k, SHOT_WINDOW_SIZE);
+            if (now - windowTime[i] > ShooterConstants.SHOT_WINDOW_SECONDS) break;
+            highest = Math.max(highest, windowRpm[i]);
+        }
+        if (targetRpm > 0 && highest - filteredRpm >= ShooterConstants.SHOT_DROP_RPM
+                && targetRpm - filteredRpm >= ShooterConstants.SHOT_BELOW_TARGET_RPM) {
+            inShot = true;
+            shotStartTime = now;
+            shotTargetRpm = targetRpm;
+            shotBeforeRpm = highest;
+            shotLowestRpm = filteredRpm;
+        }
+    }
+
+    private void finishShot() {
+        inShot = false;
+        double sincePrevious = shotStartTime - lastShotTime;
+        if (!(sincePrevious <= ShooterConstants.VOLLEY_GAP_SECONDS)) {
+            volley.clear();
+            volleyNumber++;
+            shotInVolley = 0;
+            sincePrevious = Double.NaN;
+        }
+        lastShotTime = shotStartTime;
+        shotInVolley++;
+        Shot shot = new Shot(shotTargetRpm, shotBeforeRpm, shotBeforeRpm - shotLowestRpm, sincePrevious);
+        if (volley.size() >= ShooterConstants.SHOTS_SHOWN) volley.remove(0);
+        volley.add(shot);
+        RobotLog.ii(LOG_TAG, "volley %d shot %d: target %.0f, before %.0f (%+.0f), dip %.0f, %s, %.2f V, I %+.3f",
+                volleyNumber, shotInVolley, shot.targetRpm, shot.beforeRpm, shot.beforeRpm - shot.targetRpm,
+                shot.dipRpm, Double.isNaN(sincePrevious) ? "first"
+                        : String.format(Locale.US, "%.0f ms after previous", sincePrevious * 1000),
+                readBatteryVoltage(), integralPower);
+    }
+
+    /** The lowest valid hub battery reading, NaN without one. Only the shot log reads it. */
+    private double readBatteryVoltage() {
         double lowest = Double.POSITIVE_INFINITY;
         for (VoltageSensor sensor : voltageSensors) {
             double volts = sensor.getVoltage();
-            if (volts >= ShooterConstants.MIN_VALID_VOLTAGE && volts <= ShooterConstants.MAX_VALID_VOLTAGE) {
-                lowest = Math.min(lowest, volts);
-            }
+            if (volts > 0) lowest = Math.min(lowest, volts);
         }
-        if (Double.isInfinite(lowest)) return;
-        batteryVoltage = Double.isNaN(batteryVoltage) ? lowest
-                : batteryVoltage + ShooterConstants.VOLTAGE_FILTER_ALPHA * (lowest - batteryVoltage);
-        voltageScale = ShooterConstants.NOMINAL_VOLTAGE / batteryVoltage;
+        return Double.isInfinite(lowest) ? Double.NaN : lowest;
     }
 
     /** Reads the flywheel encoder now. updateControl() reads it itself every loop. */
@@ -260,7 +340,26 @@ public final class Shooter extends SubsystemBase {
         }
         telemetry.addData("Shooter 实际 RPM", "%.0f", filteredRpm);
         telemetry.addData("Shooter 功率", "%.3f", power);
-        telemetry.addData("Shooter 电压补偿", "%.2f V，×%.3f", batteryVoltage, voltageScale);
+        telemetry.addData("Shooter 积分 / 可送球", "%+.3f / %s", integralPower, readyToFeed ? "是" : "等转速");
+        addShotTelemetry(telemetry);
+    }
+
+    /** The last volley: each ball's RPM error just before it (filtered peak - target) and its dip. */
+    private void addShotTelemetry(Telemetry telemetry) {
+        if (volley.isEmpty()) {
+            telemetry.addData("上一轮出手", "还没有检测到射球");
+            return;
+        }
+        StringBuilder errors = new StringBuilder();
+        StringBuilder gaps = new StringBuilder();
+        for (Shot shot : volley) {
+            errors.append(String.format(Locale.US, " %+.0f/%.0f", shot.beforeRpm - shot.targetRpm, shot.dipRpm));
+            if (!Double.isNaN(shot.sincePreviousS)) {
+                gaps.append(String.format(Locale.US, " %.2f", shot.sincePreviousS));
+            }
+        }
+        telemetry.addData("上一轮出手 误差/掉速 RPM", "第 %d 轮%s", volleyNumber, errors);
+        if (gaps.length() > 0) telemetry.addData("上一轮出手 球间隔 s", gaps.toString().trim());
     }
 
     public void addTuningTelemetry(Telemetry telemetry) {
