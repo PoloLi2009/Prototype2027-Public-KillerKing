@@ -3,16 +3,22 @@ package org.firstinspires.ftc.teamcode.subsystems.shooter;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.shooter.ShooterConstants.Gain;
 
 import java.util.EnumMap;
+import java.util.List;
 
 public final class Shooter extends SubsystemBase {
     private final DcMotorEx encoderMotor;
     private final DcMotorEx followerMotor;
+    private final List<VoltageSensor> voltageSensors;
+    private double batteryVoltage = Double.NaN;   // filtered; NaN until the first valid reading
+    private double lastVoltageReadTime = Double.NEGATIVE_INFINITY;
+    private double voltageScale = 1.0;            // NOMINAL_VOLTAGE / batteryVoltage
     private final EnumMap<Gain, Double> gains = new EnumMap<>(Gain.class);
     private Gain selectedGain = Gain.P;
     private double targetRpm = ShooterConstants.INITIAL_RPM;
@@ -20,6 +26,7 @@ public final class Shooter extends SubsystemBase {
     private double rpmTrim;
     private boolean distanceRpmEnabled;
     private double filteredRpm;
+    private boolean filterPrimed;                 // false until the first update after startControl()
     private double lastRawRpm;
     private double lastTime;
     private double power;
@@ -40,11 +47,14 @@ public final class Shooter extends SubsystemBase {
             motor.setZeroPowerBehavior(ShooterConstants.ZERO_POWER_BEHAVIOR);
         }
         encoderMotor.setDirection(ShooterConstants.ENCODER_MOTOR_DIRECTION);
+        voltageSensors = hardwareMap.getAll(VoltageSensor.class);
     }
 
     public void startControl(double now) {
         lastTime = now;
         resetFeedback();
+        filterPrimed = false;                             // start the filter at the first reading
+        lastVoltageReadTime = Double.NEGATIVE_INFINITY;   // read the battery on the first update
     }
 
     public void adjustRpm(int direction) {
@@ -96,7 +106,16 @@ public final class Shooter extends SubsystemBase {
         double rawRpm = readRawRpm();
         lastRawRpm = rawRpm;
         double previousRpm = filteredRpm;
-        filteredRpm += ShooterConstants.FILTER_ALPHA * (rawRpm - filteredRpm);
+        if (filterPrimed) {
+            // First-order low-pass by time constant: the same lag whatever the loop time.
+            filteredRpm += dt / (ShooterConstants.FILTER_TIME_CONSTANT_SECONDS + dt) * (rawRpm - filteredRpm);
+        } else {
+            // A stale value (from before a pause, or 0 at the first start) would make P see a false
+            // error for the first loops; resetFeedback() already makes the first derivative 0.
+            filteredRpm = rawRpm;
+            filterPrimed = true;
+        }
+        updateBatteryVoltage(now);
         if (manual) {
             setPower(manualPower);
             return;
@@ -105,19 +124,45 @@ public final class Shooter extends SubsystemBase {
         // Differentiate the measured RPM so a setpoint step does not kick the output.
         double derivative = hasPreviousFeedbackSample ? (previousRpm - filteredRpm) / dt : 0;
         hasPreviousFeedbackSample = true;
+        // Everything up to the output is power at NOMINAL_VOLTAGE; voltageScale turns it into the power
+        // that gives the motors the same voltage from the battery as it is now.
         double basePower = gains.get(Gain.F) * targetRpm
                 + gains.get(Gain.P) * error + gains.get(Gain.D) * derivative;
+        double maxPower = ShooterConstants.MAX_POWER / voltageScale;
+        double minPower = ShooterConstants.MIN_POWER / voltageScale;
         double integralStep = gains.get(Gain.I) * error * dt;
         double requestedPower = basePower + integralPower;
-        if (integralStep > 0 && requestedPower < ShooterConstants.MAX_POWER) {
-            integralPower += Math.min(integralStep, ShooterConstants.MAX_POWER - requestedPower);
-        } else if (integralStep < 0 && requestedPower > ShooterConstants.MIN_POWER) {
-            integralPower += Math.max(integralStep, ShooterConstants.MIN_POWER - requestedPower);
+        if (integralStep > 0 && requestedPower < maxPower) {
+            integralPower += Math.min(integralStep, maxPower - requestedPower);
+        } else if (integralStep < 0 && requestedPower > minPower) {
+            integralPower += Math.max(integralStep, minPower - requestedPower);
         }
         double outputRange = ShooterConstants.MAX_POWER - ShooterConstants.MIN_POWER;
         integralPower = Range.clip(integralPower, -outputRange, outputRange);
-        double output = Range.clip(basePower + integralPower, ShooterConstants.MIN_POWER, ShooterConstants.MAX_POWER);
+        double output = Range.clip((basePower + integralPower) * voltageScale,
+                ShooterConstants.MIN_POWER, ShooterConstants.MAX_POWER);
         setPower(Double.isNaN(powerOverride) ? output : powerOverride);
+    }
+
+    /**
+     * Reads the battery every VOLTAGE_READ_PERIOD_SECONDS (the lowest valid hub reading), filters it
+     * and updates voltageScale. Without a valid reading yet the scale stays 1 (no compensation).
+     */
+    private void updateBatteryVoltage(double now) {
+        double sinceRead = now - lastVoltageReadTime;
+        if (sinceRead >= 0 && sinceRead < ShooterConstants.VOLTAGE_READ_PERIOD_SECONDS) return;
+        lastVoltageReadTime = now;
+        double lowest = Double.POSITIVE_INFINITY;
+        for (VoltageSensor sensor : voltageSensors) {
+            double volts = sensor.getVoltage();
+            if (volts >= ShooterConstants.MIN_VALID_VOLTAGE && volts <= ShooterConstants.MAX_VALID_VOLTAGE) {
+                lowest = Math.min(lowest, volts);
+            }
+        }
+        if (Double.isInfinite(lowest)) return;
+        batteryVoltage = Double.isNaN(batteryVoltage) ? lowest
+                : batteryVoltage + ShooterConstants.VOLTAGE_FILTER_ALPHA * (lowest - batteryVoltage);
+        voltageScale = ShooterConstants.NOMINAL_VOLTAGE / batteryVoltage;
     }
 
     /** Reads the flywheel encoder now. updateControl() reads it itself every loop. */
@@ -209,8 +254,13 @@ public final class Shooter extends SubsystemBase {
 
     public void addTelemetry(Telemetry telemetry) {
         telemetry.addData("Shooter 目标 RPM", "%.0f", targetRpm);
+        if (distanceRpmEnabled) {
+            // The D-pad ← / → offset added to the distance table (0 = the table as measured).
+            telemetry.addData("Shooter RPM 微调", "%+.0f", rpmTrim);
+        }
         telemetry.addData("Shooter 实际 RPM", "%.0f", filteredRpm);
         telemetry.addData("Shooter 功率", "%.3f", power);
+        telemetry.addData("Shooter 电压补偿", "%.2f V，×%.3f", batteryVoltage, voltageScale);
     }
 
     public void addTuningTelemetry(Telemetry telemetry) {

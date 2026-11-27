@@ -44,4 +44,11 @@ public final class PinpointConstants {
     // If Red3Tips_2_0.end changes, update this.
     public static final Pose2D RED_AFTER_3TIPS_START_POSE = new Pose2D(DistanceUnit.INCH, 10.75, 89.75,
             AngleUnit.DEGREES, 270);
+
+    // The TeleOp "Blue After 3Tips" starts where Blue3Tips1.0 parks: the end of 09 Park,
+    // Blue3Tips_1_0.point909Park, Pedro (132.1075, 41.3259) at 270 deg, plus the same +1.25 in shift.
+    // It uses this only when Blue3Tips1.0 did not hand over its measured end pose (AutoEndPose).
+    // If point909Park changes (the blue route is regenerated from the red one), update this.
+    public static final Pose2D BLUE_AFTER_3TIPS_START_POSE = new Pose2D(DistanceUnit.INCH, 133.3575, 42.5759,
+            AngleUnit.DEGREES, 270);
 }

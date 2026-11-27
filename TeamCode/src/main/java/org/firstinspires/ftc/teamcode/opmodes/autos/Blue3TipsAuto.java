@@ -31,6 +31,7 @@ import org.firstinspires.ftc.teamcode.subsystems.gate.Gate;
 import org.firstinspires.ftc.teamcode.subsystems.gate.GateConstants;
 import org.firstinspires.ftc.teamcode.subsystems.intake.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.intake.IntakeConstants;
+import org.firstinspires.ftc.teamcode.subsystems.pinpoint.AutoEndPose;
 import org.firstinspires.ftc.teamcode.subsystems.shooter.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.shooter.ShooterConstants;
 import org.firstinspires.ftc.teamcode.subsystems.turret.Turret;
@@ -58,8 +59,10 @@ import java.util.function.Supplier;
  * (84, 84) from there); 02 + 04 at the far spot fill the CELL that came up (84, 60) for tip 2; 06 +
  * 08 at the near spot go back to (84, 84) for tip 3. Each step's start time goes to RobotLog.
  */
-@Autonomous(name = "Blue3Tips1.0", group = "Auto")
+@Autonomous(name = Blue3TipsAuto.NAME, group = "Auto")
 public class Blue3TipsAuto extends CommandOpMode {
+    public static final String NAME = "Blue3Tips1.0";
+
     // Flywheel target for each volley (robot center to target). All start at the TeleOp default;
     // tune each from test shots at its spot. The TeleOp distance table starts at 109 cm, so it does
     // not cover the 80-100 cm shots.
@@ -206,6 +209,15 @@ public class Blue3TipsAuto extends CommandOpMode {
                 run();
             }
         } finally {
+            // Also when the field stops AUTO at 30 s: the TeleOp "Blue After 3Tips" starts from here.
+            // Only once the routine ran (a stop during INIT would hand over the start pose).
+            // Red3Tips1.0 has no such hand-over: no TeleOp follows it.
+            if (routine != null && follower != null && poseValid(follower.pose())) {
+                Pose pose = follower.pose();
+                AutoEndPose.record(NAME, turretPose());
+                RobotLog.ii(NAME, "End pose handed to the TeleOp: Pedro (%.2f, %.2f, %.1f deg)", pose.x(), pose.y(),
+                        Math.toDegrees(pose.heading()));
+            }
             cancelCommands();
             if (intake != null) intake.stop();
             if (gate != null) gate.setOpen(false);

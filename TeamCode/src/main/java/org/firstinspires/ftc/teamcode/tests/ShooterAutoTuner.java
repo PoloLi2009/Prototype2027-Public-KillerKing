@@ -25,20 +25,22 @@ import java.util.Locale;
 import java.util.function.BiConsumer;
 
 /**
- * Measures the flywheel and picks KP / KI / KF for the Shooter PIDF (KD stays 0). Take every ball out
+ * Measures the flywheel and picks KP / KF for the Shooter PIDF (KI and KD stay 0). Take every ball out
  * first: only the flywheel turns. About 2 minutes.
  *
  * <ol>
  * <li>Open loop: holds each power in OPEN_LOOP_POWERS until the flywheel settles, fits
  *     steady RPM = rpmPerPower * power + intercept, the first-order time constant of each step and
- *     the encoder noise. KF is the power needed at the test RPM divided by that RPM.</li>
+ *     the encoder noise. KF is the power needed at the test RPM divided by that RPM. The Shooter
+ *     scales its output by NOMINAL_VOLTAGE / battery voltage, so rpmPerPower and KF are converted
+ *     from the battery voltage of the open-loop steps to ShooterConstants.NOMINAL_VOLTAGE.</li>
  * <li>KP: runs the real Shooter controller at the test RPM for each candidate (KI = KD = 0, KF from 1).
  *     Each candidate: the steady RPM jitter, then DIPS_PER_CANDIDATE dips (braking at MIN_POWER until
  *     DIP_RPM is lost, as a ball would take it) and the RPM error SCORE_FROM_S-SCORE_TO_S after each
  *     dip, when the next ball of a volley arrives. Score = that error + the jitter. The current
  *     ShooterConstants gains run first as the baseline.</li>
- * <li>KI: with the best KP, keeps the largest KI that scores within KI_SCORE_SLACK of KI = 0 and
- *     does not overshoot.</li>
+ * <li>KI: with the best KP, runs the KI candidates for reference only. KI stays 0 (user, 2026-11-27:
+ *     the integral overshoots after every ball); voltage compensation makes up for the battery.</li>
  * </ol>
  *
  * Set the loop period (D-pad up / down in INIT) to the TeleOp loop time ("循环时间" in its
@@ -81,7 +83,6 @@ public class ShooterAutoTuner extends LinearOpMode {
     static final double RECOVERED_RPM = 25;
     // Just over one 35 RPM step of the distance table.
     static final double OVERSHOOT_LIMIT_RPM = 40;
-    static final double KI_SCORE_SLACK = 1.10;
     static final double POWER_HEADROOM_WARNING = 0.85;
 
     static final double DEFAULT_LOOP_MS = 20;
@@ -186,38 +187,35 @@ public class ShooterAutoTuner extends LinearOpMode {
 
         List<Candidate> kpRuns = new ArrayList<>();
         for (double loopGain : LOOP_GAINS) {
-            double kp = loopGain / open.rpmPerPower;
+            // Loop gain at NOMINAL_VOLTAGE: the Shooter's voltage compensation keeps it there.
+            double kp = loopGain / open.rpmPerPowerNominal;
             Candidate c = testCandidate("KP " + sig(kp), index++, total, kp, 0, 0, open.kf);
             if (c == null) return;
             kpRuns.add(c);
         }
         Candidate bestKp = pickBest(kpRuns);
-        // Some KI is wanted for the battery drop, so the best-scoring KI wins even if KI = 0 scored a
-        // little better; KI = 0 stays only if every KI overshoots or scores much worse.
-        Candidate best = bestKp;
-        Candidate bestKi = null;
+        // KI stays 0 (the battery drop is compensated by voltage); the KI candidates are only run so
+        // the report shows what an integral would do.
         for (double integralTime : INTEGRAL_TIMES_S) {
             double ki = bestKp.kp / integralTime;
-            Candidate c = testCandidate("KI " + sig(ki), index++, total, bestKp.kp, ki, 0, open.kf);
+            Candidate c = testCandidate("KI " + sig(ki) + "（参考）", index++, total, bestKp.kp, ki, 0, open.kf);
             if (c == null) return;
-            boolean acceptable = Double.isFinite(c.score) && c.overshoot <= OVERSHOOT_LIMIT_RPM
-                    && c.score <= bestKp.score * KI_SCORE_SLACK;
-            if (acceptable && (bestKi == null || c.score < bestKi.score)) bestKi = c;
         }
-        if (bestKi != null) best = bestKi;
 
         shooter.stop();
-        holdScreen(report(open, baseline, bestKp, best, kpRuns, startVolts, readVoltage()));
+        holdScreen(report(open, baseline, bestKp, bestKp, kpRuns, startVolts, readVoltage()));
     }
 
     // ---------------------------------------------------------------- open loop
 
     private static final class OpenLoop {
-        double rpmPerPower;
+        double rpmPerPower;             // at the battery voltage of the open-loop steps
+        double rpmPerPowerNominal;      // the same at ShooterConstants.NOMINAL_VOLTAGE
+        double volts = Double.NaN;      // mean battery voltage of the open-loop steps
         double intercept;
         double rSquared;
-        double powerAtTest;
-        double kf;
+        double powerAtTest;             // open-loop power at the battery voltage of the steps
+        double kf;                      // at NOMINAL_VOLTAGE, as the Shooter uses it
         double tauS = Double.NaN;
         double deadTimeS = Double.NaN;
         double noiseRpm;
@@ -231,6 +229,7 @@ public class ShooterAutoTuner extends LinearOpMode {
         List<Double> deadTimes = new ArrayList<>();
         double tauEstimate = Double.NaN;
         double previousRpm = 0;               // the flywheel starts at rest
+        Stats volts = new Stats();
         for (int i = 0; i < n; i++) {
             double power = OPEN_LOOP_POWERS[i];
             shooter.setOpenLoopPower(power);
@@ -273,10 +272,12 @@ public class ShooterAutoTuner extends LinearOpMode {
                 }
                 tauEstimate = taus.isEmpty() ? fit[0] : median(taus);
             }
+            double levelVolts = readVoltage();
+            if (Double.isFinite(levelVolts)) volts.add(levelVolts);
             String levelLine = String.format(Locale.US,
                     "open loop %.2f: %.1f RPM, noise %.1f RPM, tau %s s, dead %s s, %.2f V",
                     power, steadyRpm[i], noise[i], fit == null ? "-" : sig(fit[0]),
-                    fit == null ? "-" : sig(fit[1]), readVoltage());
+                    fit == null ? "-" : sig(fit[1]), levelVolts);
             RobotLog.ii(TAG, "%s", levelLine);
             note(levelLine);
             previousRpm = steadyRpm[i];
@@ -309,7 +310,16 @@ public class ShooterAutoTuner extends LinearOpMode {
                     testRpm, open.powerAtTest);
             return null;
         }
-        open.kf = open.powerAtTest / testRpm;
+        // The Shooter multiplies its output by NOMINAL_VOLTAGE / battery voltage, so its KF and KP are
+        // for NOMINAL_VOLTAGE: the same RPM takes power * volts / NOMINAL_VOLTAGE there. Without a
+        // voltage reading the values are used as measured.
+        double voltsRatio = 1.0;
+        if (volts.count() > 0) {
+            open.volts = volts.mean();
+            voltsRatio = open.volts / ShooterConstants.NOMINAL_VOLTAGE;
+        }
+        open.rpmPerPowerNominal = open.rpmPerPower / voltsRatio;
+        open.kf = open.powerAtTest * voltsRatio / testRpm;
         if (!taus.isEmpty()) {
             open.tauS = median(taus);
             open.deadTimeS = median(deadTimes);
@@ -320,9 +330,11 @@ public class ShooterAutoTuner extends LinearOpMode {
         }
         open.noiseRpm = noise[nearest];
 
-        String line = String.format("开环：每单位功率 %.0f RPM（R² %.4f），%.0f RPM 需要功率 %.3f，KF %s",
-                open.rpmPerPower, open.rSquared, testRpm, open.powerAtTest, sig(open.kf));
+        String line = String.format("开环（%.2f V）：每单位功率 %.0f RPM（R² %.4f），%.0f RPM 需要功率 %.3f",
+                open.volts, open.rpmPerPower, open.rSquared, testRpm, open.powerAtTest);
         addResult(line);
+        addResult(String.format("  换算到 %.1f V：每单位功率 %.0f RPM，KF %s%s", ShooterConstants.NOMINAL_VOLTAGE,
+                open.rpmPerPowerNominal, sig(open.kf), volts.count() > 0 ? "" : "（没读到电压，未换算）"));
         addResult(String.format("  时间常数 %s s，滞后 %s s，测速噪声 ±%.1f RPM",
                 sig(open.tauS), sig(open.deadTimeS), open.noiseRpm));
         RobotLog.ii(TAG, "%s", line);
@@ -552,7 +564,8 @@ public class ShooterAutoTuner extends LinearOpMode {
         if (Math.abs(endVolts - startVolts) > 0.5) {
             lines.add("注意：测试中电池电压变化超过 0.5 V，KF 会偏。充满电再测一次更准。");
         }
-        lines.add("KF 只在测试时的电池电压下准确，KI 负责补偿比赛中电池电压下降。");
+        lines.add(String.format("KF、KP 已换算到 %.1f V（NOMINAL_VOLTAGE）。Shooter 按电池电压缩放输出，KI 保持 0，"
+                + "KI 候选只供参考。", ShooterConstants.NOMINAL_VOLTAGE));
         lines.add(csvFile != null && csv != null ? "数据文件：" + csvFile.getAbsolutePath() : "数据文件没有写成功");
         lines.add("---- 全部结果 ----");
         lines.addAll(resultLines);

@@ -134,6 +134,12 @@ public abstract class KillerKingTeleOp extends CommandOpMode {
 
         onPress(() -> gamepad1.dpad_left, () -> shooter.adjustRpm(-1));
         onPress(() -> gamepad1.dpad_right, () -> shooter.adjustRpm(1));
+        if (!tuneShooter) {
+            // The co-driver trims the flywheel RPM the same way, in every match TeleOp (Red, Blue and the
+            // After 3Tips ones). The tuning TeleOps keep gamepad 2 ← / → for selecting a gain.
+            onPress(() -> gamepad2.dpad_left, () -> shooter.adjustRpm(-1));
+            onPress(() -> gamepad2.dpad_right, () -> shooter.adjustRpm(1));
+        }
         onPress(() -> gamepad1.dpad_up, intake::raiseLift);
         onPress(() -> gamepad1.dpad_down, intake::lowerLift);
         onPress(() -> gamepad1.b, visionReadCommand::forceVisionAlignment);
@@ -152,7 +158,9 @@ public abstract class KillerKingTeleOp extends CommandOpMode {
         if (afterAutonomous != null) {
             telemetry.addLine("初始位姿来源: " + startPoseSource);
         }
-        telemetry.addLine("←/→ 调 RPM  LT 吸球  RT 射球  LB 反转  圆圈/B 强制 Limelight 校准（手柄 1、2 都可以）");
+        telemetry.addLine(tuneShooter
+                ? "←/→ 调 RPM  LT 吸球  RT 射球  LB 反转  圆圈/B 强制 Limelight 校准（手柄 1、2 都可以）"
+                : "←/→ 调 RPM、圆圈/B 强制 Limelight 校准（手柄 1、2 都可以）  LT 吸球  RT 射球  LB 反转");
         telemetry.addLine("↑/↓ 抬升  三角/Y 切换自瞄（默认开）  方块/X 重置驾驶朝向");
         telemetry.addLine("按下右摇杆 抬起/放下 Flower 铲（默认抬起）");
         if (tuneShooter) {
